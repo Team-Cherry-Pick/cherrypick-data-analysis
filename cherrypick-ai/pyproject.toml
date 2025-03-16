@@ -5,17 +5,19 @@ description = ""
 authors = [
     {name = "@LYST",email = "101388967+gabury1@users.noreply.github.com"}
 ]
-
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi (>=0.115.11,<0.116.0)",
+    "uvicorn (>=0.34.0,<0.35.0)",
+    "python-dotenv (>=1.0.1,<2.0.0)",
+    "sqlalchemy (>=2.0.39,<3.0.0)",
+    "pymysql (>=1.1.1,<2.0.0)"
+]
 
-[tool.poetry.dependencies]
-python = "^3.11"
-fastapi = "^0.103.0"
-uvicorn = "^0.23.0"
-sqlalchemy = "^2.0.39"
-pymysql = "^1.1.1"
-python-dotenv = "^1.0.1"
+[tool.poetry]
+packages = [{include = "cherrypick_ai", from = "src"}]
+
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

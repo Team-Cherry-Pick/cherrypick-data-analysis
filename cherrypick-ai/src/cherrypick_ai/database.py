@@ -1,9 +1,15 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import text
+
+from src.cherrypick_ai.config import DB_URL
+from src.cherrypick_ai.config import DB_USERNAME
+from src.cherrypick_ai.config import DB_PASSWORD
+
 
 # MySQL 연결 정보
-DATABASE_URL = "mysql+pymysql://root:password@serverprac.cj6koc6yqngh.ap-northeast-2.rds.amazonaws.com/serverprac"
+DATABASE_URL = f"mysql+pymysql://{DB_USERNAME}:{DB_PASSWORD}@{DB_URL}"
 
 # SQLAlchemy 엔진 생성
 engine = create_engine(DATABASE_URL, echo=True)
