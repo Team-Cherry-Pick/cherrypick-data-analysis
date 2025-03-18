@@ -2,18 +2,18 @@ import redis
 import redis.exceptions
 from src.cherrypick_ai.config.redis_config import get_redis_client
 from src.cherrypick_ai.services.method import method
+from src.cherrypick_ai.queries.board_query import get_hashtags_for_board
 
 STREAM_NAME = "USER_BEHAVIOR_STREAM"
 CONSUMER_GROUP = "REALTIME_USER_INTEREST_UPDATERS"
 CONSUMER_NAME = "REALTIME_USER_INTEREST_UPDATER"
 
-def create_group() :
+client = get_redis_client()
+
+def redis_initialize() :
 
     # 컨슈머 그룹 생성 (존재하지 않으면 생성)
     try:
-
-        client = get_redis_client()
-        print(method.PURCHASE.name)
 
         if not client.exists(method.PURCHASE.name) :
             client.set(method.PURCHASE.name, method.PURCHASE.value)
@@ -36,9 +36,6 @@ def create_group() :
 
 # 비동기 Redis 스트림 리스너 함수
 async def user_interest_updater_start():
-    # Redis 비동기 클라이언트 설정
-    client = get_redis_client()
-
     # 스트림에서 새로운 메시지를 감지
     print(f"Listening to stream: {STREAM_NAME}...\n")
     while True:
@@ -60,7 +57,21 @@ async def user_interest_updater_start():
 
 
 def user_interest_update(fields : dict):
-    print(fields.get("method"))
+    board_id=fields.get("boardId")
+    user_id = fields.get("userId")
+    m = fields.get("method")
+
+    weight = client.get(m)
+    tags = get_hashtags_for_board(int(board_id))
+    key = f"user:{user_id}:interests"
+
+    if not client.exists(key) :
+        client.zadd(key, {"init" : 0})
+
+    for tag in tags:
+        client.zincrby(key, float(weight), tag)
+
+
 
 
 

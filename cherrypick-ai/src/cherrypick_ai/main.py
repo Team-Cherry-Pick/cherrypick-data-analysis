@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from src.cherrypick_ai.config.env_config import DB_USERNAME
 from src.cherrypick_ai.database import engine
 from src.cherrypick_ai import models
-from src.cherrypick_ai.services.user_interest_updater import create_group, user_interest_updater_start
+from src.cherrypick_ai.services.user_interest_updater import redis_initialize, user_interest_updater_start
 
 app = FastAPI()
 
@@ -14,8 +14,8 @@ async def hello():
 
 # 테이블 생성 (기존 테이블이 있으면 무시)
 models.Base.metadata.create_all(bind=engine)
-# 컨슈머 그룹 생성
-create_group()
+# 컨슈머 그룹 생성, 가중치가 없다면 추가해줌
+redis_initialize()
 
 
 # 유저 관심사 실시간 분석 모듈 실행
