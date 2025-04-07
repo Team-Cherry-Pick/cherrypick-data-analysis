@@ -1,0 +1,16 @@
+FROM python:3.10
+WORKDIR /app
+RUN pip install poetry
+
+COPY pyproject.toml poetry.lock ./
+COPY . .
+
+RUN poetry install --no-root
+EXPOSE 8000
+# 실행 명령 (main.py 기준)
+CMD ["python", "src/cherrypick_ai/main.py"]
+
+
+
+
+
