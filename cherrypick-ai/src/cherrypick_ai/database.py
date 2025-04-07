@@ -5,7 +5,7 @@ from src.cherrypick_ai.config.env_config import DB_URL,DB_USERNAME,DB_PASSWORD
 
 
 
-# MySQL 연결 정보
+# MySQL 연결 정보z
 DATABASE_URL = f"mysql+pymysql://{DB_USERNAME}:{DB_PASSWORD}@{DB_URL}"
 
 # SQLAlchemy 엔진 생성
