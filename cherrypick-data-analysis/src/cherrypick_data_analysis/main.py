@@ -6,11 +6,10 @@ if __name__ == "__main__":
         mode = sys.argv[1]
 
         if mode == "fmkorea":
-            from fmkorea_crawler import fmkorea_crawl
-            fmkorea_crawl()
+            from fmkorea_crawler.fmkorea_crawl import crawl_start
+            crawl_start()
 
         elif mode == "serve":
-            import data_analysis
             subprocess.run(["streamlit", "run", "src/cherrypick_data_analysis/data_analysis/app.py"])
 
         else:

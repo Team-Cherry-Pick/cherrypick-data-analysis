@@ -2,7 +2,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import List
 
-from cherrypick_data_analysis.shared.enum import Site
+from shared.enum.site import Site
+
 
 @dataclass
 class CommentDTO:
@@ -33,3 +34,4 @@ class DealDTO :
     created_at: datetime
 
     comment_list: List[CommentDTO]
+

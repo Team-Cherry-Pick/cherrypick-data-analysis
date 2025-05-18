@@ -1,34 +1,33 @@
+import math
+
 from selenium.webdriver.ie.webdriver import WebDriver
 from time import sleep
-from cherrypick_data_analysis.shared.enum import Site
-from cherrypick_data_analysis.logic.crawler.page_dto import DealDTO
-from cherrypick_data_analysis.shared.util import parse_html
+from cherrypick_data_analysis.shared.util.crawl_util import *
+from fmkorea_crawler.crawler.page_dto import DealDTO, CommentDTO
+from shared.enum.site import Site
 from datetime import datetime
-import re
-from urllib.parse import urlparse
-
-def SAFE(deal_no, fn):
-    try:
-        return fn()
-    except Exception as e:
-        print(f"[ERROR - {deal_no}] {e}")
-        return None
+from bs4 import BeautifulSoup
 
 def parse_fmkorea(driver: WebDriver, deal_no):
     driver.get(Site.FMKOREA.deal_detail_url + str(deal_no) + "?cpage=1")
     sleep(1)
     html = driver.page_source
+    from shared.util.crawl_util import parse_html
     soup = parse_html(html)
 
     try:
         print("FM_KOREA PARSE")
-
         source_site = Site.FMKOREA
-        next_page = SAFE(deal_no, lambda: str(soup.select_one("span.btn_pack.next.blockfmcopy a").get("href")).replace("/", ""))
+
+        next_page = SAFE(deal_no, lambda: str(soup.select_one("a#auto_next_button").get("href")).replace("/", ""))
+
         username = SAFE(deal_no, lambda: soup.select_one("a.member_plate").get_text(strip=True))
         title = SAFE(deal_no, lambda: soup.select_one("h1.np_18px > span.np_18px_span").get_text(strip=True))
         content = SAFE(deal_no, lambda: soup.select_one("article").get_text(strip=True))
-        discounted_price = SAFE(deal_no, lambda: extract_price(soup.find("th", string="가격").find_next_sibling("td").get_text(strip=True)))
+
+        discounted_price = SAFE(deal_no, lambda: extract_price(
+            soup.find("th", string="가격").find_next_sibling("td").get_text(strip=True))
+        )
         product_link = SAFE(deal_no, lambda: soup.select_one("td div.xe_content a").get("href"))
         store = SAFE(deal_no, lambda: get_redirect_url(product_link))
 
@@ -38,7 +37,15 @@ def parse_fmkorea(driver: WebDriver, deal_no):
         comment_count = SAFE(deal_no, lambda: int(info_box[2].get_text(strip=True)))
 
         is_expired = SAFE(deal_no, lambda: soup.select_one("div.hotdeal_var8Y_msg") is not None)
-        created_at = SAFE(deal_no, lambda: parse_date_time(soup.select_one("span.date.m_no").get_text(strip=True)))
+        created_at = SAFE(deal_no, lambda: parse_date_time(
+            soup.select_one("span.date.m_no").get_text(strip=True), default=None
+        ))
+
+        comments = parse_comment(deal_no, soup)
+        comment_page = math.ceil(comment_count / 50)
+        for idx in range(2, comment_page+1):
+            page_soup = get_Comment_page_HTML(deal_no, idx, driver)
+            comments += parse_comment(deal_no, page_soup)
 
         response = DealDTO(
             source_site=source_site,
@@ -56,7 +63,7 @@ def parse_fmkorea(driver: WebDriver, deal_no):
             store=store,
             product_link=product_link,
             created_at=created_at,
-            comment_list=None,
+            comment_list=comments,
         )
 
         print_deal_dto(response)
@@ -66,57 +73,45 @@ def parse_fmkorea(driver: WebDriver, deal_no):
         print(f"[PARSING ERROR - {deal_no}] {e}")
         return None
 
-
-
-def print_deal_dto(dto: DealDTO):
-    print("┌───────────── DealDTO ─────────────┐")
-    print(f"│ site           : {dto.source_site}")
-    print(f"│ deal_no        : {dto.deal_no}")
-    print(f"│ next_page      : {dto.next_page}")
-    print(f"│ username       : {dto.username}")
-    print(f"│ title          : {dto.title}")
-    print(f"│ content        : {dto.content[:80]}." if dto.content else "│ content        : None")
-    print(f"│ product_link   : {dto.product_link}")
-    print(f"│ store          : {dto.store}")
-    print(f"│ vote           : {dto.vote}")
-    print(f"│ views          : {dto.views}")
-    print(f"│ origin_price   : {dto.origin_price}")
-    print(f"│ discounted_price: {dto.discounted_price}")
-    print(f"│ created_at     : {dto.created_at}")
-    print(f"│ comment_list   : {dto.comment_list}")
-    print("└────────────────────────────────────┘")
-
-
-def extract_base_url(url: str) -> str:
+def SAFE(deal_no, fn):
     try:
-        return urlparse(url).netloc
+        return fn()
     except Exception as e:
-        print(f"[URL PARSE ERROR] {e}")
+        print(f"[ERROR - {deal_no}] {e}")
         return None
 
+def parse_comment(deal_no, soup: BeautifulSoup):
+    comments = []
+    li_tags = soup.select("ul.fdb_lst_ul > li.fdb_itm")
+    for li in li_tags:
+        if "comment_best" in li.get("class", []):
+            continue  # 베스트 댓글 제외
 
-def parse_date_time(raw) :
-    try :
-        return datetime.strptime(raw, "%Y.%m.%d %H:%M")
-    except Exception as e:
-        print(f"[DATE PARSE ERROR] {e}")
-        return None
+        content = SAFE(deal_no, lambda: li.select_one("div.comment-content div.xe_content").get_text(strip=True))
+        username = SAFE(deal_no, lambda: li.select_one("a.member_plate").get_text(strip=True))
 
-import requests
+        upvote = SAFE(deal_no, lambda: li.select_one("span.voted_count").get_text(strip=True))
+        upvote = int(upvote) if upvote != '' else 0
+        downvote = SAFE(deal_no, lambda: li.select_one("span.blamed_count").get_text(strip=True))
+        downvote = int(downvote) if downvote != '' else 0
 
-def get_redirect_url(url: str) -> str:
-    try:
-        response = requests.get(url, allow_redirects=True, timeout=5)
-        return extract_base_url(response.url)
-    except requests.RequestException as e:
-        print(f"[ERROR] URL 추적 실패: {e}")
-        return None
+        created_at = SAFE(deal_no, lambda: parse_relative_time(
+            li.select_one("span.date").get_text(strip=True)
+        ))
 
+        if content and username:
+            comments.append(CommentDTO(
+                content=content,
+                username=username,
+                upvote=upvote,
+                downvote=downvote,
+                created_at=created_at
+            ))
+    return comments
 
-def extract_price(text: str) -> int:
-    try:
-        digits = re.sub(r"[^\d]", "", text)
-        return int(digits) if digits else None
-    except Exception as e:
-        print(f"[PRICE PARSE ERROR] {e}")
-        return None
+def get_Comment_page_HTML(deal_no, comment_page : int, driver) :
+    driver.get(Site.FMKOREA.deal_detail_url + str(deal_no) + "?cpage=" + str(comment_page))
+    sleep(1)
+    html = driver.page_source
+    from shared.util.crawl_util import parse_html
+    return parse_html(html)
