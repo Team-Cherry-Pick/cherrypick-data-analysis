@@ -1,4 +1,4 @@
-FROM python:3.13
+FROM python:3.11-slim
 WORKDIR /app
 
 RUN pip install poetry
@@ -9,10 +9,10 @@ COPY . .
 RUN poetry install --no-root
 
 ENV PYTHONPATH=/app/src
-EXPOSE 8000
+EXPOSE 8501
 
 # 실행 명령 (main.py 기준)
-CMD ["poetry", "run", "python", "src/cherrypick_recommender/main.py"]
+CMD ["poetry", "run", "python", "src/cherrypick_data_analysis/main.py"]
 
 
 
