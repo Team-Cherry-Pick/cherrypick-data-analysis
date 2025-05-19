@@ -42,6 +42,7 @@ def crawl_start() :
                 set_crawler_status(Site.FMKOREA, Status.WAITING)
                 print("FM Korea 크롤링 서비스 다음 글을 대기 중 . . .")
                 time.sleep(60)
+                continue
             else :
                 next_idx = dto.next_page
 
@@ -51,6 +52,7 @@ def crawl_start() :
             avg_duration = calculate_average_duration(Site.FMKOREA)
             set_crawler_data(Site.FMKOREA, DataKey.AVERAGE_DURATION, avg_duration)
             set_crawler_data(Site.FMKOREA, DataKey.QUEUED_COUNT, q.qsize())
+            set_crawler_status(Site.FMKOREA, Status.RUNNING)
 
         except Exception as e:
             print(e)
