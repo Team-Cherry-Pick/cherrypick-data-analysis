@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import List
 
+from shared.enum.price_type import PriceType
 from shared.enum.site import Site
 
 @dataclass
@@ -22,7 +23,8 @@ class DealDTO :
     title: str
     content: str
 
-    origin_price: int
+    price_type: PriceType
+    origin_price: str
     discounted_price: int
     vote: int
     views: int

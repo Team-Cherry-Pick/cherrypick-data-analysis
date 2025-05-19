@@ -32,4 +32,4 @@ EXPOSE 8501
 
 # 진입점(main.py), 인자 받을 수 있도록 ENTRYPOINT + CMD 구성
 ENTRYPOINT ["poetry", "run", "python", "src/cherrypick_data_analysis/main.py"]
-CMD ["fmkorea"]
+CMD ["serve"]

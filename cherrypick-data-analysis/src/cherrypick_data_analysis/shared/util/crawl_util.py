@@ -1,3 +1,5 @@
+import traceback
+
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -5,6 +7,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from urllib.parse import urlparse
 
 from shared.dto.page_dto import DealDTO
+from shared.enum.price_type import PriceType
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
@@ -83,13 +86,27 @@ def get_redirect_url(url: str) -> str:
         return None
 
 
+import re
+
+
 def extract_price(text: str):
     try:
-        digits = re.sub(r"[^\d]", "", text)
+        # 1. 콤마 제거
+        cleaned = text.replace(",", "")
+
+        # 2. 맨 앞이 숫자가 아니면 제거
+        cleaned = re.sub(r"^\D+", "", cleaned)
+
+        # 3. 숫자가 아닌 문자 기준으로 스플릿 → 첫 번째 숫자 조각 추출
+        parts = re.split(r"\D+", cleaned)
+        digits = parts[0] if parts and parts[0].isdigit() else None
+
         return int(digits) if digits else None
+
     except Exception as e:
         print(f"[PRICE PARSE ERROR] {e}")
         return None
+
 
 from datetime import datetime, timedelta
 import re
@@ -108,3 +125,26 @@ def parse_relative_time(text: str) -> datetime:
         return now - timedelta(minutes=minutes)
     else:
         return None  # 또는 예외 처리
+
+def get_price_type(deal_no, origin) :
+    try :
+        patterns = [
+            r'\$\s*\d+',                             # $123
+            r'\d+(\.\d+)?\s*\$',                     # 123$
+            r'\d+(\.\d+)?\s*(USD|usd|Usd)',          # 123 USD
+            r'(USD|usd|Usd)\s*\d+(\.\d+)?',          # USD 123
+            r'\d+(\.\d+)?\s*(달러|불)',              # 123달러
+            r'(달러|불)\s*\d+(\.\d+)?',              # 달러123
+            r'미화\s*\d+(\.\d+)?',                   # 미화 123
+            r'\d+\s*달러\s*\d+\s*센트',              # 123달러 45센트
+            r'\d+불',                                # 99불
+            r'\bbucks\b',                            # bucks
+            r'\b\d+\.\d{2}\b'                        # 123.99
+        ]
+        for pattern in patterns:
+            if re.search(pattern, origin):
+                return PriceType.USD
+        return PriceType.KRW
+    except Exception as e:
+        traceback.print_exc()
+        return PriceType.KRW

@@ -1,11 +1,13 @@
 import queue
 import time
+import traceback
 from typing import List
 
+from sqlalchemy.orm import Session
 from unicodedata import category
 
 from shared.database.model import Comment
-from shared.dto.page_dto import UserDTO
+from shared.dto.page_dto import UserDTO, PageDTO
 from shared.enum.crawler_status import Status, DataKey
 from shared.enum.site import Site
 from shared.database.database import get_session
@@ -18,13 +20,22 @@ TOTAL_COUNT = 0
 FAILURE_COUNT = 0
 QUEUE_COUNT = 0
 
+def save_users(session:Session, site:Site, pages:List[PageDTO]):
 
-def get_user_list(appear_user:List[UserDTO], user_dict:dict):
-    #print("GET USER LIST")
-    target_users = []
-    for user in appear_user:
+    deal_comment_users = []
+    for page in pages:
+         deal_comment_users += page.users
+    username_set = set(u.username for u in deal_comment_users)
+
+    queried_user_list = session.query(User).filter(User.username.in_(username_set),
+                               User.source_site == site.name
+                               ).all()
+    user_dict = {u.username: u for u in queried_user_list}
+
+    for user in deal_comment_users:
         origin_user = user_dict.get(user.username)
         if origin_user is None:
+            # noinspection PyTypeChecker
             origin_user = user_dict[user.username] = User(
                 username=user.username,
                 source_site=user.source_site.name,
@@ -33,22 +44,22 @@ def get_user_list(appear_user:List[UserDTO], user_dict:dict):
             )
 
         origin_user.last_appear_time = user.appear_time
-        target_users.append(origin_user)
 
-    return target_users
+    session.add_all(user_dict.values())
+    session.commit()
+    return user_dict
 
+def save_deals(session:Session, pages:List[PageDTO], user_dict:dict, category_dict:dict) :
 
-
-def get_deal_list(deal, user_dict:dict, category_dict:dict) :
-    #print("GET DEAL LIST")
-
-    return Deal(
+    deals = [page.deal for page in pages]
+    deal_dict = {int(deal.deal_no): Deal(
         source_site=deal.source_site.name,
         deal_no=deal.deal_no,
         user_id=user_dict[deal.username].user_id,
         title=deal.title,
         content=deal.content,
 
+        price_type=deal.price_type,
         origin_price=deal.origin_price,
         discounted_price=deal.discounted_price,
         vote=deal.vote,
@@ -59,14 +70,20 @@ def get_deal_list(deal, user_dict:dict, category_dict:dict) :
         product_link=deal.product_link,
         category_id=category_dict[str(deal.deal_no)],
         created_at=deal.created_at
-    )
+    ) for deal in deals}
 
-def get_comment_list(comments, deal_dict:dict, user_dict:dict):
+    session.add_all(deal_dict.values())
+    session.commit()
+
+    return deal_dict
+
+def save_comments(session:Session, pages, deal_dict:dict, user_dict:dict):
     #print("GET COMMENT LIST")
-    comment_list = []
-    for comment in comments:
-        comment_list.append(
-            Comment(
+    comments = []
+    for page in pages:
+        comments += page.comments
+
+    comment_for_save = [Comment(
                 content=comment.content,
                 up_vote=comment.upvote,
                 down_vote=comment.downvote,
@@ -74,9 +91,10 @@ def get_comment_list(comments, deal_dict:dict, user_dict:dict):
                 deal_id=deal_dict[int(comment.deal_no)].deal_id,
                 user_id=user_dict[comment.username].user_id,
                 created_at=comment.created_at
-            )
-        )
-    return comment_list
+            ) for comment in comments]
+    session.add_all(comment_for_save)
+    session.commit()
+
 
 
 def data_save_process(q : queue, source_site : Site):
@@ -84,18 +102,16 @@ def data_save_process(q : queue, source_site : Site):
     batch_size = 5
     timeout = 20
 
-
     while True:
         batch = []
         start = time.time()
-        session = get_session()
+
+        # 멈춰!!
+        status = get_crawler_status(source_site)
+        if status == Status.BREAK:
+            break
 
         while len(batch) < batch_size and (time.time() - start) < timeout:
-
-            # 멈춰!!
-            status = get_crawler_status(source_site)
-            if status == Status.BREAK :
-                break
 
             try:
                 batch.append(q.get(timeout=timeout))
@@ -107,59 +123,46 @@ def data_save_process(q : queue, source_site : Site):
             continue  # 큐 비었고, 타임아웃됨
 
         try :
+            # 크롤러 상태 변수 초기화
             global TOTAL_COUNT
             TOTAL_COUNT += len(batch)
             set_crawler_data(source_site, DataKey.TOTAL_COUNT, TOTAL_COUNT)
-            set_crawler_data(source_site, DataKey.QUEUED_COUNT, q.qsize())
+            with q.mutex:
+                set_crawler_data(source_site, DataKey.QUEUED_COUNT, len(q.queue))
 
-            users = session.query(User).filter(User.source_site == source_site.name).all()
-            deals = session.query(Deal).filter(Deal.source_site == source_site.name).all()
-            user_dict = {user.username: user for user in users}
+            #########################
+            ###      DB 저장
+            #########################
+            session = get_session()
+            # USER 저장
+            user_dict = save_users(session, source_site, batch)
 
-            for dto in batch:
-                if dto.deal.deal_no == next((d.deal_no for d in deals if d.deal_no == dto.deal.deal_no), None) :
-                    batch.remove(dto)
+            # DEAL 저장
+            category_dict = get_category_dict(batch)
+            deal_dict = save_deals(session, batch, user_dict, category_dict)
 
-            # USER
-            appear_users = []
-            for dto in batch:
-                appear_users += get_user_list(dto.users, user_dict)
-
-            session.add_all(appear_users)
-            session.commit()
-            user_dict = {user.username: user for user in appear_users}
-
-            # DEAL
-            dict_list = [{
-                "deal_no": dto.deal.deal_no,
-                "title": dto.deal.title,
-                "content": dto.deal.content,
-            } for dto in batch]
-
-            category_dict = classify_deals(dict_list)
-            new_deals = []
-            for dto in batch:
-                new_deals.append(get_deal_list(dto.deal, user_dict, category_dict))
-            session.add_all(new_deals)
-            session.commit()
-            deal_dict = {deal.deal_no: deal for deal in new_deals}
-
-            new_comments = []
-            for dto in batch:
-                new_comments += get_comment_list(dto.comments, deal_dict, user_dict)
-            session.add_all(new_comments)
-            session.commit()
+            # COMMENT 저장
+            save_comments(session, batch, deal_dict, user_dict)
 
             session.close()
         except Exception as e:
             global FAILURE_COUNT
+            traceback.print_exc()
             print(f"ERROR {e}")
+            # 에러 저장
             save_error_log(source_site,"SAVE ERROR", e)
+            # 에러난 애들 더해줌
             FAILURE_COUNT += len(batch)
             set_crawler_data(source_site, DataKey.FAILURE_COUNT, FAILURE_COUNT)
 
 
-
+def get_category_dict(batch) :
+    dict_list = [{
+        "deal_no": dto.deal.deal_no,
+        "title": dto.deal.title,
+        "content": dto.deal.content,
+    } for dto in batch]
+    return classify_deals(dict_list)
 
 
 

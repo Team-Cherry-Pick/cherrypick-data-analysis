@@ -30,7 +30,7 @@ def get_crawler_status(site:Site):
 def set_crawler_data(site:Site, data:DataKey, value)->bool:
     try :
         r = get_redis_client()
-        r.hset(f"CRAWLER:{site.name}:DATA", data.name, value)
+        r.hset(f"CRAWLER:{site.name}:DATA", data.name, str(value))
         return True
     except Exception as e:
         print(f"redis hset error: {e}")
@@ -76,6 +76,6 @@ def initialize_redis(site:Site):
 def save_error_log(site:Site, error, message) :
     try :
         r = get_redis_client()
-        r.xadd(f"CRAWLER:{site.name}:ERRORS", {"error": error, "message": message})
+        r.xadd(f"CRAWLER:{site.name}:ERRORS", {"error": str(error), "message": str(message)})
     except RedisError as e:
         print(f"redis log save error: {e}")

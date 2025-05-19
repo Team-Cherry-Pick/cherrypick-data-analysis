@@ -20,12 +20,11 @@ def crawl_start() :
     print("FMKOREA 크롤링 시작")
     initialize_redis(Site.FMKOREA)
 
-    next_idx = 1254308182
+    next_idx = 1255061629
     driver = get_driver()
     while (True):
 
         try :
-
             status = get_crawler_status(Site.FMKOREA)
             if status == Status.BREAK :
                 print("FM Korea 크롤링 서비스를 중단합니다 . . .")
@@ -42,6 +41,7 @@ def crawl_start() :
                 set_crawler_status(Site.FMKOREA, Status.WAITING)
                 print("FM Korea 크롤링 서비스 다음 글을 대기 중 . . .")
                 time.sleep(60)
+                set_crawler_status(Site.FMKOREA, Status.RUNNING)
                 continue
             else :
                 next_idx = dto.next_page
@@ -51,8 +51,9 @@ def crawl_start() :
 
             avg_duration = calculate_average_duration(Site.FMKOREA)
             set_crawler_data(Site.FMKOREA, DataKey.AVERAGE_DURATION, avg_duration)
-            set_crawler_data(Site.FMKOREA, DataKey.QUEUED_COUNT, q.qsize())
-            set_crawler_status(Site.FMKOREA, Status.RUNNING)
+            with q.mutex :
+                set_crawler_data(Site.FMKOREA, DataKey.QUEUED_COUNT, len(q.queue))
+
 
         except Exception as e:
             print(e)

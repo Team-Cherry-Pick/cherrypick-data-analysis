@@ -1,8 +1,11 @@
 import math
+import traceback
+
 from selenium.webdriver.ie.webdriver import WebDriver
 from time import sleep
 from cherrypick_data_analysis.shared.util.crawl_util import *
 from shared.dto.page_dto import DealDTO, CommentDTO, PageDTO, UserDTO
+from shared.enum.price_type import PriceType
 from shared.util.crawl_util import parse_html
 from shared.enum.site import Site
 from bs4 import BeautifulSoup
@@ -18,18 +21,24 @@ def parse_fmkorea(driver: WebDriver, deal_no):
 
     users = []
     comments = []
-
+    page = PageDTO(
+        deal=None,
+        comments=None,
+        users=None,
+        next_page=None
+    )
     try:
         print("FM_KOREA PARSE")
         source_site = Site.FMKOREA
 
         next_page = SAFE(deal_no, lambda: str(soup.select_one("a#auto_next_button").get("href")).replace("/", ""))
+        page.next_page = next_page
         username = SAFE(deal_no, lambda: soup.select_one("a.member_plate").get_text(strip=True))
         title = SAFE(deal_no, lambda: soup.select_one("h1.np_18px > span.np_18px_span").get_text(strip=True))
         content = SAFE(deal_no, lambda: soup.select_one("article").get_text(strip=True))
 
-        discounted_price = SAFE(deal_no, lambda: extract_price(
-            soup.find("th", string="가격").find_next_sibling("td").get_text(strip=True))
+        origin_price = SAFE(deal_no, lambda:
+            soup.find("th", string="가격").find_next_sibling("td").get_text(strip=True)
         )
         product_link = SAFE(deal_no, lambda: soup.select_one("td div.xe_content a").get("href"))
         store = SAFE(deal_no, lambda: get_redirect_url(product_link))
@@ -51,8 +60,9 @@ def parse_fmkorea(driver: WebDriver, deal_no):
             username=username,
             title=title,
             content=content,
-            origin_price=None,
-            discounted_price=discounted_price,
+            price_type=get_price_type(deal_no, origin_price),
+            origin_price=str(origin_price),
+            discounted_price=extract_price(origin_price),
             vote=vote,
             views=views,
             comment_count=comment_count,
@@ -77,23 +87,22 @@ def parse_fmkorea(driver: WebDriver, deal_no):
             if user is None:
                 users.append(UserDTO(comment.username, comment.created_at, source_site=source_site, behavior="COMMENT"))
 
-        return PageDTO(
-            deal = deal,
-            comments=comments,
-            users = users,
-            next_page=next_page
-        )
+        page.deal = deal
+        page.comments = comments
+        page.users = users
+        return page
 
     except Exception as e:
         print(f"[PARSING ERROR - {deal_no}] {e}")
+        traceback.print_exc()
         save_error_log(Site.FMKOREA, "PARSING ERROR", f"DEAL_NO {deal_no} : {e}")
-        return None
+        return page
 
 def SAFE(deal_no, fn):
     try:
         return fn()
     except Exception as e:
-        print(f"[ERROR - {deal_no}] {e}")
+        print(f"[PARSING ERROR - {deal_no}] {e}")
         save_error_log(Site.FMKOREA, "PARSING ERROR", f"DEAL_NO {deal_no} : {e}")
         return None
 
@@ -135,3 +144,4 @@ def get_Comment_page_HTML(deal_no, comment_page : int, driver) :
     html = driver.page_source
     from shared.util.crawl_util import parse_html
     return parse_html(html)
+
