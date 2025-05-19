@@ -7,6 +7,9 @@ from shared.util.crawl_util import parse_html
 from shared.enum.site import Site
 from bs4 import BeautifulSoup
 
+from shared.util.redis_util import save_error_log
+
+
 def parse_fmkorea(driver: WebDriver, deal_no):
     driver.get(Site.FMKOREA.deal_detail_url + str(deal_no) + "?cpage=1")
     sleep(1)
@@ -21,7 +24,6 @@ def parse_fmkorea(driver: WebDriver, deal_no):
         source_site = Site.FMKOREA
 
         next_page = SAFE(deal_no, lambda: str(soup.select_one("a#auto_next_button").get("href")).replace("/", ""))
-
         username = SAFE(deal_no, lambda: soup.select_one("a.member_plate").get_text(strip=True))
         title = SAFE(deal_no, lambda: soup.select_one("h1.np_18px > span.np_18px_span").get_text(strip=True))
         content = SAFE(deal_no, lambda: soup.select_one("article").get_text(strip=True))
@@ -84,6 +86,7 @@ def parse_fmkorea(driver: WebDriver, deal_no):
 
     except Exception as e:
         print(f"[PARSING ERROR - {deal_no}] {e}")
+        save_error_log(Site.FMKOREA, "PARSING ERROR", f"DEAL_NO {deal_no} : {e}")
         return None
 
 def SAFE(deal_no, fn):
@@ -91,6 +94,7 @@ def SAFE(deal_no, fn):
         return fn()
     except Exception as e:
         print(f"[ERROR - {deal_no}] {e}")
+        save_error_log(Site.FMKOREA, "PARSING ERROR", f"DEAL_NO {deal_no} : {e}")
         return None
 
 def parse_comment(deal_no, soup: BeautifulSoup):
