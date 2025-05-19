@@ -11,3 +11,5 @@ DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 REDIS_URL = os.getenv("REDIS_URL")
 REDIS_PORT = os.getenv("REDIS_PORT")
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")

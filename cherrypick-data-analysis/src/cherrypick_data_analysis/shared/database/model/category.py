@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, BIGINT
 from sqlalchemy.orm import relationship
 
-from cherrypick_data_analysis.logic.model import Base
+from ..database import Base
 
 
 class Category(Base):
@@ -11,4 +11,3 @@ class Category(Base):
     name = Column(String(255), nullable=False)
 
     deals = relationship("Deal", back_populates="category", cascade="all, delete-orphan")
-    comments = relationship("Comment", back_populates="user", cascade="all, delete-orphan")

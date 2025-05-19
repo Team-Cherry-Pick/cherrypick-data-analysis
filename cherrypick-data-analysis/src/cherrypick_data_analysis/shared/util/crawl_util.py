@@ -2,11 +2,9 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-from datetime import datetime
-import re
 from urllib.parse import urlparse
 
-from fmkorea_crawler.crawler.page_dto import DealDTO, CommentDTO
+from shared.dto.page_dto import DealDTO
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
@@ -72,8 +70,7 @@ def parse_date_time(raw, default) :
     try :
         return datetime.strptime(raw, "%Y.%m.%d %H:%M")
     except Exception as e:
-        print(f"[DATE PARSE ERROR] {e}")
-        return default
+        return parse_relative_time(raw)
 
 import requests
 

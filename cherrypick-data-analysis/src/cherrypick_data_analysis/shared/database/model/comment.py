@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, BIGINT, ForeignKey, DateTime, Enum
 from sqlalchemy.orm import relationship
 
-from cherrypick_data_analysis.shared.enum import Site
-from cherrypick_data_analysis.logic.model import Base
+from cherrypick_data_analysis.shared.enum.site import Site
+from ..database import Base
 
 
 class Comment(Base):

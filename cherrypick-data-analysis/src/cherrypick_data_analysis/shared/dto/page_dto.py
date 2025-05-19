@@ -4,19 +4,19 @@ from typing import List
 
 from shared.enum.site import Site
 
-
 @dataclass
 class CommentDTO:
+    deal_no: int
     content: str
     username: str
     upvote: int
     downvote: int
+    source_site: Site
     created_at: datetime
 
 @dataclass
 class DealDTO :
     source_site: Site
-    next_page: int
     deal_no: int
     username: str
     title: str
@@ -33,5 +33,17 @@ class DealDTO :
     product_link: str
     created_at: datetime
 
-    comment_list: List[CommentDTO]
 
+@dataclass
+class UserDTO:
+    username: str
+    appear_time: datetime
+    source_site: Site
+    behavior: str
+
+@dataclass
+class PageDTO:
+    deal: DealDTO
+    comments: List[CommentDTO]
+    users: List[UserDTO]
+    next_page: int

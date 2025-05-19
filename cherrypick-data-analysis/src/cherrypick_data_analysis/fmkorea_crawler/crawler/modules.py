@@ -1,19 +1,20 @@
 import math
-
 from selenium.webdriver.ie.webdriver import WebDriver
 from time import sleep
 from cherrypick_data_analysis.shared.util.crawl_util import *
-from fmkorea_crawler.crawler.page_dto import DealDTO, CommentDTO
+from shared.dto.page_dto import DealDTO, CommentDTO, PageDTO, UserDTO
+from shared.util.crawl_util import parse_html
 from shared.enum.site import Site
-from datetime import datetime
 from bs4 import BeautifulSoup
 
 def parse_fmkorea(driver: WebDriver, deal_no):
     driver.get(Site.FMKOREA.deal_detail_url + str(deal_no) + "?cpage=1")
     sleep(1)
     html = driver.page_source
-    from shared.util.crawl_util import parse_html
     soup = parse_html(html)
+
+    users = []
+    comments = []
 
     try:
         print("FM_KOREA PARSE")
@@ -41,15 +42,9 @@ def parse_fmkorea(driver: WebDriver, deal_no):
             soup.select_one("span.date.m_no").get_text(strip=True), default=None
         ))
 
-        comments = parse_comment(deal_no, soup)
-        comment_page = math.ceil(comment_count / 50)
-        for idx in range(2, comment_page+1):
-            page_soup = get_Comment_page_HTML(deal_no, idx, driver)
-            comments += parse_comment(deal_no, page_soup)
-
-        response = DealDTO(
+        # DEAL
+        deal = DealDTO(
             source_site=source_site,
-            next_page=next_page,
             deal_no=deal_no,
             username=username,
             title=title,
@@ -63,11 +58,29 @@ def parse_fmkorea(driver: WebDriver, deal_no):
             store=store,
             product_link=product_link,
             created_at=created_at,
-            comment_list=comments,
         )
 
-        print_deal_dto(response)
-        return response
+        #COMMENT
+        comments += parse_comment(deal_no, soup)
+        comment_page = math.ceil(comment_count / 50)
+        for idx in range(2, comment_page+1):
+            page_soup = get_Comment_page_HTML(deal_no, idx, driver)
+            comments += parse_comment(deal_no, page_soup)
+
+
+        #USER
+        users.append(UserDTO(deal.username, deal.created_at, source_site=source_site, behavior="DEAL"))
+        for comment in comments:
+            user = next((u for u in users if u.username == comment.username), None)
+            if user is None:
+                users.append(UserDTO(comment.username, comment.created_at, source_site=source_site, behavior="COMMENT"))
+
+        return PageDTO(
+            deal = deal,
+            comments=comments,
+            users = users,
+            next_page=next_page
+        )
 
     except Exception as e:
         print(f"[PARSING ERROR - {deal_no}] {e}")
@@ -95,16 +108,19 @@ def parse_comment(deal_no, soup: BeautifulSoup):
         downvote = SAFE(deal_no, lambda: li.select_one("span.blamed_count").get_text(strip=True))
         downvote = int(downvote) if downvote != '' else 0
 
-        created_at = SAFE(deal_no, lambda: parse_relative_time(
-            li.select_one("span.date").get_text(strip=True)
+        created_at = SAFE(deal_no, lambda: parse_date_time(
+            li.select_one("span.date").get_text(strip=True),
+            default=None,
         ))
 
         if content and username:
             comments.append(CommentDTO(
+                deal_no=deal_no,
                 content=content,
                 username=username,
                 upvote=upvote,
                 downvote=downvote,
+                source_site=Site.FMKOREA,
                 created_at=created_at
             ))
     return comments
