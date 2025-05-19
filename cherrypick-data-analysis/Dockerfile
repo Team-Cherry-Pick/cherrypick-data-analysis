@@ -12,7 +12,8 @@ ENV PYTHONPATH=/app/src
 EXPOSE 8501
 
 # 실행 명령 (main.py 기준)
-CMD ["poetry", "run", "python", "src/cherrypick_data_analysis/main.py"]
+ENTRYPOINT ["poetry", "run", "python", "src/cherrypick_data_analysis/main.py"]
+CMD ["fmkorea"]
 
 
 

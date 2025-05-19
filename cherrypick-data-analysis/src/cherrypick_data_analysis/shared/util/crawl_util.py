@@ -17,7 +17,7 @@ headers = {
 }
 
 options = webdriver.ChromeOptions()
-#options.add_argument('--headless')  # 브라우저 안 띄움
+options.add_argument('--headless')  # 브라우저 안 띄움
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
 options.add_argument('--lang=ko-KR')
