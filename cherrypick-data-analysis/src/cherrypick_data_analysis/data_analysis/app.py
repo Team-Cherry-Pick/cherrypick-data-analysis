@@ -2,41 +2,26 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from cherrypick_data_analysis.shared.database.database import engine, Base
+from cherrypick_data_analysis.shared.query.deal_query import get_all_deals_dataframe
 
+st.title("🍒CHERRYPICK DATA ANALYSIS🍒")
 
-def init_func():
-    print(Base.metadata.tables.keys())
-    Base.metadata.create_all(engine)
-    st.write("초기화 작업 실행됨")
+df = get_all_deals_dataframe()
+if "category_name" in df.columns:
+    category_stats = df["category_name"].value_counts().reset_index()
+    category_stats.columns = ["category_name", "count"]
 
-if 'init_done' not in st.session_state:
-    init_func()
-    st.session_state['init_done'] = True
+    st.markdown("### 📊 카테고리별 딜 수")
+    st.bar_chart(category_stats.set_index("category_name"))
+else:
+    st.info("category_name 컬럼이 없어 차트를 그릴 수 없습니다.")
 
+df["created_at"] = pd.to_datetime(df["created_at"], errors="coerce")
+df["월"] = df["created_at"].dt.strftime("%Y.%m")
 
-st.title("Streamlit Basic Example")
+monthly = df["월"].value_counts().reset_index()
+monthly.columns = ["월", "게시글수"]
+monthly = monthly.sort_values("월")
 
-# Sidebar input
-age = st.sidebar.slider("Select your age", 0, 100, 25)
-gender = st.sidebar.radio("Select your gender", ["Male", "Female", "Other"])
-
-st.write(f"Age: {age}, Gender: {gender}")
-
-# Text input and button
-name = st.text_input("Enter your name:")
-if st.button("Greet"):
-    st.write(f"Hello, {name}!")
-
-# Display dataframe with random data
-data = pd.DataFrame(np.random.randn(10, 3), columns=["A", "B", "C"])
-st.dataframe(data)
-
-# Chart example
-st.line_chart(data["A"])
-
-# File uploader example
-uploaded_file = st.file_uploader("Upload a CSV file")
-if uploaded_file:
-    df = pd.read_csv(uploaded_file)
-    st.write("Uploaded CSV data:")
-    st.dataframe(df)
+st.markdown("### 🗓️ 월별 딜 게시글 수 추이")
+st.line_chart(monthly.set_index("월"))

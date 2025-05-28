@@ -49,3 +49,12 @@ class PageDTO:
     comments: List[CommentDTO]
     users: List[UserDTO]
     next_page: int
+
+
+def get_users(source_site:Site, deal:DealDTO, comments:List[CommentDTO]) -> List[UserDTO]:
+    users = [UserDTO(deal.username, deal.created_at, source_site=source_site, behavior="DEAL")]
+    for comment in comments:
+        user = next((u for u in users if u.username == comment.username), None)
+        if user is None:
+            users.append(UserDTO(comment.username, comment.created_at, source_site=source_site, behavior="COMMENT"))
+    return users

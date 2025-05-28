@@ -3,9 +3,9 @@ from datetime import datetime
 
 from redis import RedisError
 
-from shared.config.redis import get_redis_client
-from shared.enum.crawler_status import Status, DataKey
-from shared.enum.site import Site
+from cherrypick_data_analysis.shared.config.redis import get_redis_client
+from cherrypick_data_analysis.shared.enum.crawler_status import Status, DataKey
+from cherrypick_data_analysis.shared.enum.site import Site
 
 
 def set_crawler_status(site:Site, status:Status):
@@ -21,7 +21,6 @@ def get_crawler_status(site:Site):
     try:
         r = get_redis_client()
         value = str(r.get(f"CRAWLER:{site.name}:STATUS"))
-        #print(value)
         return Status(value)
     except RedisError as e:
         print(f"redis get error: {e}")
@@ -61,7 +60,11 @@ def initialize_redis(site:Site):
     set_crawler_data(site, DataKey.FAILURE_COUNT, 0)
     set_crawler_data(site, DataKey.QUEUED_COUNT, 0)
     set_crawler_data(site, DataKey.AVERAGE_DURATION, 0)
-    set_crawler_data(site, DataKey.NOW_CRAWLING, 0)
+    if get_crawler_data(site, DataKey.NOW_CRAWLING) == "" :
+        set_crawler_data(site, DataKey.NOW_CRAWLING, 0)
+    set_crawler_data(site, DataKey.LAST_SAVED_TIME, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    if get_crawler_data(site, DataKey.NOW_CRAWLING) == "" :
+        set_crawler_data(site, DataKey.DELAY_TIME, 3)
 
     try :
         r = get_redis_client()
@@ -72,10 +75,13 @@ def initialize_redis(site:Site):
         print(f"redis STREAMS error: {e}")
 
 
-
 def save_error_log(site:Site, error, message) :
     try :
         r = get_redis_client()
+        print(f"error: {error}, message: {message}", flush=True)
         r.xadd(f"CRAWLER:{site.name}:ERRORS", {"error": str(error), "message": str(message)})
     except RedisError as e:
         print(f"redis log save error: {e}")
+
+def get_start_page(site:Site) :
+    return int(get_crawler_data(site, DataKey.NOW_CRAWLING))

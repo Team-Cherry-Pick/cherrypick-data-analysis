@@ -1,35 +1,37 @@
 import traceback
-
+from datetime import datetime, timedelta
+import re
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from urllib.parse import urlparse
-
 from shared.dto.page_dto import DealDTO
 from shared.enum.price_type import PriceType
+import requests
+from shared.enum.site import Site
+from shared.util.redis_util import save_error_log
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 
-headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-                  'AppleWebKit/537.36 (KHTML, like Gecko) '
-                  'Chrome/114.0.0.0 Safari/537.36',
-    'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Referer': 'https://www.google.com/',
-    'Connection': 'keep-alive',
-}
-
-options = webdriver.ChromeOptions()
-options.add_argument('--headless')  # 브라우저 안 띄움
-options.add_argument('--no-sandbox')
-options.add_argument('--disable-dev-shm-usage')
-options.add_argument('--lang=ko-KR')
-options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                     "AppleWebKit/537.36 (KHTML, like Gecko) "
-                     "Chrome/114.0.0.0 Safari/537.36")
 
 def get_driver():
-    return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    options = webdriver.ChromeOptions()
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--lang=ko-KR')
+    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                         "AppleWebKit/537.36 (KHTML, like Gecko) "
+                         "Chrome/114.0.0.0 Safari/537.36")
+
+    options.binary_location = '/usr/bin/chromium'
+
+    # 일반적으로 chromium-driver 설치 시 /usr/bin/chromedriver 경로 사용
+    service = Service('/usr/bin/chromedriver')
+
+    return webdriver.Chrome(service=service, options=options)
+
 
 def parse_html(content) :
     return BeautifulSoup(content, 'html.parser')
@@ -61,90 +63,3 @@ def print_comment_dto(comment):
     print(f"│ content      : {comment.content[:80]}{'...' if len(comment.content) > 80 else ''}")
     print("└──────────────────────────────────────┘")
 
-def extract_base_url(url: str) -> str:
-    try:
-        return urlparse(url).netloc
-    except Exception as e:
-        print(f"[URL PARSE ERROR] {e}")
-        return None
-
-
-def parse_date_time(raw, default) :
-    try :
-        return datetime.strptime(raw, "%Y.%m.%d %H:%M")
-    except Exception as e:
-        return parse_relative_time(raw)
-
-import requests
-
-def get_redirect_url(url: str) -> str:
-    try:
-        response = requests.get(url, allow_redirects=True, timeout=5)
-        return extract_base_url(response.url)
-    except requests.RequestException as e:
-        print(f"[ERROR] URL 추적 실패: {e}")
-        return None
-
-
-import re
-
-
-def extract_price(text: str):
-    try:
-        # 1. 콤마 제거
-        cleaned = text.replace(",", "")
-
-        # 2. 맨 앞이 숫자가 아니면 제거
-        cleaned = re.sub(r"^\D+", "", cleaned)
-
-        # 3. 숫자가 아닌 문자 기준으로 스플릿 → 첫 번째 숫자 조각 추출
-        parts = re.split(r"\D+", cleaned)
-        digits = parts[0] if parts and parts[0].isdigit() else None
-
-        return int(digits) if digits else None
-
-    except Exception as e:
-        print(f"[PRICE PARSE ERROR] {e}")
-        return None
-
-
-from datetime import datetime, timedelta
-import re
-
-def parse_relative_time(text: str) -> datetime:
-    now = datetime.now()
-
-    hour_match = re.search(r"(\d+)\s*시간 전", text)
-    minute_match = re.search(r"(\d+)\s*분 전", text)
-
-    if hour_match:
-        hours = int(hour_match.group(1))
-        return now - timedelta(hours=hours)
-    elif minute_match:
-        minutes = int(minute_match.group(1))
-        return now - timedelta(minutes=minutes)
-    else:
-        return None  # 또는 예외 처리
-
-def get_price_type(deal_no, origin) :
-    try :
-        patterns = [
-            r'\$\s*\d+',                             # $123
-            r'\d+(\.\d+)?\s*\$',                     # 123$
-            r'\d+(\.\d+)?\s*(USD|usd|Usd)',          # 123 USD
-            r'(USD|usd|Usd)\s*\d+(\.\d+)?',          # USD 123
-            r'\d+(\.\d+)?\s*(달러|불)',              # 123달러
-            r'(달러|불)\s*\d+(\.\d+)?',              # 달러123
-            r'미화\s*\d+(\.\d+)?',                   # 미화 123
-            r'\d+\s*달러\s*\d+\s*센트',              # 123달러 45센트
-            r'\d+불',                                # 99불
-            r'\bbucks\b',                            # bucks
-            r'\b\d+\.\d{2}\b'                        # 123.99
-        ]
-        for pattern in patterns:
-            if re.search(pattern, origin):
-                return PriceType.USD
-        return PriceType.KRW
-    except Exception as e:
-        traceback.print_exc()
-        return PriceType.KRW

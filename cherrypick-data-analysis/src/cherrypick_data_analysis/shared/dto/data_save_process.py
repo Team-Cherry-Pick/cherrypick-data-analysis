@@ -5,7 +5,7 @@ from typing import List
 
 from sqlalchemy.orm import Session
 from unicodedata import category
-
+from datetime import datetime
 from shared.database.model import Comment
 from shared.dto.page_dto import UserDTO, PageDTO
 from shared.enum.crawler_status import Status, DataKey
@@ -43,7 +43,11 @@ def save_users(session:Session, site:Site, pages:List[PageDTO]):
                 last_appear_time=user.appear_time
             )
 
-        origin_user.last_appear_time = user.appear_time
+        if origin_user.first_appear_time < user.appear_time :
+            if  origin_user.last_appear_time < user.appear_time : origin_user.last_appear_time = user.appear_time
+        else :
+            if user.appear_time < origin_user.first_appear_time : origin_user.first_appear_time = user.appear_time
+
 
     session.add_all(user_dict.values())
     session.commit()
@@ -98,21 +102,18 @@ def save_comments(session:Session, pages, deal_dict:dict, user_dict:dict):
 
 
 def data_save_process(q : queue, source_site : Site):
-    print("====SAVING DATA=====")
     batch_size = 5
-    timeout = 20
+    timeout = 30
 
     while True:
         batch = []
         start = time.time()
 
-        # 멈춰!!
-        status = get_crawler_status(source_site)
-        if status == Status.BREAK:
-            break
-
         while len(batch) < batch_size and (time.time() - start) < timeout:
-
+            # 멈춰!!
+            status = get_crawler_status(source_site)
+            if status == Status.BREAK:
+                break
             try:
                 batch.append(q.get(timeout=timeout))
                 q.task_done()
@@ -123,6 +124,8 @@ def data_save_process(q : queue, source_site : Site):
             continue  # 큐 비었고, 타임아웃됨
 
         try :
+            print(f"START SAVING DATA {datetime.now()}")
+
             # 크롤러 상태 변수 초기화
             global TOTAL_COUNT
             TOTAL_COUNT += len(batch)
@@ -145,6 +148,7 @@ def data_save_process(q : queue, source_site : Site):
             save_comments(session, batch, deal_dict, user_dict)
 
             session.close()
+            set_crawler_data(source_site, DataKey.LAST_SAVED_TIME, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         except Exception as e:
             global FAILURE_COUNT
             traceback.print_exc()

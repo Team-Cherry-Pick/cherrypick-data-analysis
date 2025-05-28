@@ -13,3 +13,6 @@ REDIS_URL = os.getenv("REDIS_URL")
 REDIS_PORT = os.getenv("REDIS_PORT")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+MASTER_PASSWORD = os.getenv("MASTER_PASSWORD")
+SLACK_URL = os.getenv("SLACK_URL")
