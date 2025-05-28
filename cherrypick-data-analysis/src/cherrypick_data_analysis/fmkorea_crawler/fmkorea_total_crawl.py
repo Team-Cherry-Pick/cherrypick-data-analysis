@@ -72,7 +72,7 @@ def crawl_start(start_page):
             phase += 1
 
     print("cancel crawling . . .")
-    slack.send_slack(f"🎉🎉🎉 {Site.FMKOREA.name} Crawler 성공적으로 종료했습니다 ! 🎉🎉🎉\n*{page - start_page}p* 페이지를 긁었습니다 !\n다음에는 *{page}p* 부터 시작하면 됩니다 !")
+    slack.finalize_message(Site.FMKOREA, start_page, page)
     driver.quit()
 
 

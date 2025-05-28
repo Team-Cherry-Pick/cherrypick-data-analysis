@@ -34,3 +34,6 @@ def status_message(site : Site) :
 딜레이 타임 : 1s~{get_crawler_data(site, DataKey.DELAY_TIME)}
 계속 수집하겠습니다 ! 😏 
     """)
+
+def finalize_message(site : Site, start_page, page) :
+    send_slack(f"🎉🎉🎉 {site.name} Crawler 성공적으로 종료했습니다 ! 🎉🎉🎉\n*{page - start_page}p* 페이지를 긁었습니다 !\n다음에는 *{page}p* 부터 시작하면 됩니다 !")
