@@ -1,7 +1,12 @@
 import sys
 import subprocess
+from cherrypick_data_analysis.shared.database.model import *
+from cherrypick_data_analysis.shared.database.database import Base, engine
+
 
 if __name__ == "__main__":
+    Base.metadata.create_all(engine)
+
     if len(sys.argv) > 1:
         mode = sys.argv[1]
         if "fmkorea" in mode:

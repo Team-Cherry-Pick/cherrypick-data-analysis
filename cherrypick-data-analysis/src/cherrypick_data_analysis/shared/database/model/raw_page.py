@@ -5,20 +5,14 @@ from .comment import Comment
 from cherrypick_data_analysis.shared.enum.site import Site
 from ..database import Base
 from ...enum.price_type import PriceType
+from sqlalchemy import Text
 
 
-class Deal(Base):
-    __tablename__ = "deal"
+class RawPage(Base):
+    __tablename__ = "raw_page"
 
-    deal_id = Column(BIGINT, primary_key=True, autoincrement=True)
-    deal_no = Column(BIGINT, nullable=True)
-
-
+    page_id = Column(BIGINT, primary_key=True, autoincrement=True)
+    page_no = Column(BIGINT, nullable=True)
+    raw_html = Column(Text, nullable=True)
+    created_at = Column(DateTime, nullable=True)
     source_site = Column(Enum(Site), nullable=True)
-    is_published = Column(Boolean, nullable=True, default=False)
-    user_id = Column(BIGINT, ForeignKey("user.user_id"), nullable=True)
-    category_id = Column(BIGINT, ForeignKey("category.category_id"), nullable=True)
-
-    user = relationship("User", back_populates="deals")
-    category = relationship("Category", back_populates="deals")
-    comments = relationship("Comment", back_populates="deal", cascade="all, delete-orphan")

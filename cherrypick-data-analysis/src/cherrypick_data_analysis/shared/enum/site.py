@@ -11,4 +11,4 @@ class Site(enum.Enum):
         return obj
 
     FMKOREA = ("FMKOREA", "https://www.fmkorea.com//", "https://www.fmkorea.com/index.php?mid=hotdeal&page=")
-    PPOMPPU = ("PPOMPPU", "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=", "")
+    PPOMPPU = ("PPOMPPU", "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=", "https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu&page=")
