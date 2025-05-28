@@ -1,32 +1,37 @@
+import traceback
+from datetime import datetime, timedelta
+import re
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from urllib.parse import urlparse
-
 from shared.dto.page_dto import DealDTO
+from shared.enum.price_type import PriceType
+import requests
+from shared.enum.site import Site
+from shared.util.redis_util import save_error_log
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 
-headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-                  'AppleWebKit/537.36 (KHTML, like Gecko) '
-                  'Chrome/114.0.0.0 Safari/537.36',
-    'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Referer': 'https://www.google.com/',
-    'Connection': 'keep-alive',
-}
-
-options = webdriver.ChromeOptions()
-options.add_argument('--headless')  # 브라우저 안 띄움
-options.add_argument('--no-sandbox')
-options.add_argument('--disable-dev-shm-usage')
-options.add_argument('--lang=ko-KR')
-options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                     "AppleWebKit/537.36 (KHTML, like Gecko) "
-                     "Chrome/114.0.0.0 Safari/537.36")
 
 def get_driver():
-    return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    options = webdriver.ChromeOptions()
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--lang=ko-KR')
+    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                         "AppleWebKit/537.36 (KHTML, like Gecko) "
+                         "Chrome/114.0.0.0 Safari/537.36")
+
+    options.binary_location = '/usr/bin/chromium'
+
+    # 일반적으로 chromium-driver 설치 시 /usr/bin/chromedriver 경로 사용
+    service = Service('/usr/bin/chromedriver')
+
+    return webdriver.Chrome(service=service, options=options)
+
 
 def parse_html(content) :
     return BeautifulSoup(content, 'html.parser')
@@ -58,53 +63,3 @@ def print_comment_dto(comment):
     print(f"│ content      : {comment.content[:80]}{'...' if len(comment.content) > 80 else ''}")
     print("└──────────────────────────────────────┘")
 
-def extract_base_url(url: str) -> str:
-    try:
-        return urlparse(url).netloc
-    except Exception as e:
-        print(f"[URL PARSE ERROR] {e}")
-        return None
-
-
-def parse_date_time(raw, default) :
-    try :
-        return datetime.strptime(raw, "%Y.%m.%d %H:%M")
-    except Exception as e:
-        return parse_relative_time(raw)
-
-import requests
-
-def get_redirect_url(url: str) -> str:
-    try:
-        response = requests.get(url, allow_redirects=True, timeout=5)
-        return extract_base_url(response.url)
-    except requests.RequestException as e:
-        print(f"[ERROR] URL 추적 실패: {e}")
-        return None
-
-
-def extract_price(text: str):
-    try:
-        digits = re.sub(r"[^\d]", "", text)
-        return int(digits) if digits else None
-    except Exception as e:
-        print(f"[PRICE PARSE ERROR] {e}")
-        return None
-
-from datetime import datetime, timedelta
-import re
-
-def parse_relative_time(text: str) -> datetime:
-    now = datetime.now()
-
-    hour_match = re.search(r"(\d+)\s*시간 전", text)
-    minute_match = re.search(r"(\d+)\s*분 전", text)
-
-    if hour_match:
-        hours = int(hour_match.group(1))
-        return now - timedelta(hours=hours)
-    elif minute_match:
-        minutes = int(minute_match.group(1))
-        return now - timedelta(minutes=minutes)
-    else:
-        return None  # 또는 예외 처리

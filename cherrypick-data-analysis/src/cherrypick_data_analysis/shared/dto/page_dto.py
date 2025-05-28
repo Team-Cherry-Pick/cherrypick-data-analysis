@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import List
 
+from shared.enum.price_type import PriceType
 from shared.enum.site import Site
 
 @dataclass
@@ -22,7 +23,8 @@ class DealDTO :
     title: str
     content: str
 
-    origin_price: int
+    price_type: PriceType
+    origin_price: str
     discounted_price: int
     vote: int
     views: int
@@ -47,3 +49,12 @@ class PageDTO:
     comments: List[CommentDTO]
     users: List[UserDTO]
     next_page: int
+
+
+def get_users(source_site:Site, deal:DealDTO, comments:List[CommentDTO]) -> List[UserDTO]:
+    users = [UserDTO(deal.username, deal.created_at, source_site=source_site, behavior="DEAL")]
+    for comment in comments:
+        user = next((u for u in users if u.username == comment.username), None)
+        if user is None:
+            users.append(UserDTO(comment.username, comment.created_at, source_site=source_site, behavior="COMMENT"))
+    return users

@@ -1,7 +1,7 @@
 import logging
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 from cherrypick_data_analysis.shared.config.env import DB_URL, DB_USERNAME, DB_PASSWORD
 
 
@@ -15,7 +15,7 @@ engine = create_engine(DATABASE_URL)#, echo=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # 세션 반환 함수
-def get_session():
+def get_session()->Session:
     return SessionLocal()
 
 logging.basicConfig(level=logging.INFO)
