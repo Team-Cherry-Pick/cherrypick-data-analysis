@@ -60,10 +60,10 @@ def initialize_redis(site:Site):
     set_crawler_data(site, DataKey.FAILURE_COUNT, 0)
     set_crawler_data(site, DataKey.QUEUED_COUNT, 0)
     set_crawler_data(site, DataKey.AVERAGE_DURATION, 0)
-    if get_crawler_data(site, DataKey.NOW_CRAWLING) == "" :
-        set_crawler_data(site, DataKey.NOW_CRAWLING, 0)
+    if get_crawler_data(site, DataKey.NOW_CRAWLING) == "None" :
+        set_crawler_data(site, DataKey.NOW_CRAWLING, 2)
     set_crawler_data(site, DataKey.LAST_SAVED_TIME, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    if get_crawler_data(site, DataKey.NOW_CRAWLING) == "" :
+    if get_crawler_data(site, DataKey.DELAY_TIME) == "None" :
         set_crawler_data(site, DataKey.DELAY_TIME, 3)
 
     try :

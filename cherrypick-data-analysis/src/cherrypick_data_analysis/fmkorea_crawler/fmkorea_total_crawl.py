@@ -42,10 +42,9 @@ def crawl_start(start_page):
         # 링크 받아오는 과정에서 오류가 나면 None, 이후 break
         if links is None :
             set_crawler_status(Site.FMKOREA, Status.WAITING)
-            slack.send_slack(
-                f"{Site.FMKOREA.name} 접근이 차단 당했습니다 😭😭😭 \n{start_page - page}p 페이지를 긁었습니다 ! \n 어슬렁 거리다가 6시간 뒤에 다시 잠입하겠습니다...😎")
-            sleep(21600)
-            slack.send_slack(f"키키키 {Site.FMKOREA.name} 다시 접근해보겠습니다 😃😃😃")
+            slack.block_message(Site.FMKOREA, start_page, page)
+            sleep(14400)
+            slack.retry_message(Site.FMKOREA)
             continue
 
         # 해당 링크들 순회하며 dto로 만들어 queue에 담음
@@ -67,23 +66,13 @@ def crawl_start(start_page):
 
         total = int(get_crawler_data(Site.FMKOREA, DataKey.TOTAL_COUNT))
         if 500 * phase < total :
-            slack.send_slack(f"""
-                키키키 ! {Site.FMKOREA.name} Crawler *{total}개* 수집 성공 !!😎 
-                
-                [현재 상태]
-                평균 시간 : {get_crawler_data(Site.FMKOREA, DataKey.AVERAGE_DURATION)}
-                현재 페이지 : {get_crawler_data(Site.FMKOREA, DataKey.NOW_CRAWLING)}
-                마지막 저장 : {get_crawler_data(Site.FMKOREA, DataKey.LAST_SAVED_TIME)}
-                딜레이 타임 : 1s~{get_crawler_data(Site.FMKOREA, DataKey.DELAY_TIME)}s
-                
-                계속 수집하겠습니다 ! 😏 
-            """)
+            slack.status_message(Site.FMKOREA)
             driver.quit()
             driver = get_driver()
             phase += 1
 
     print("cancel crawling . . .")
-    slack.send_slack(f"🎉🎉🎉 {Site.FMKOREA.name} Crawler 성공적으로 종료했습니다 ! 🎉🎉🎉\n*{page - start_page}p* 페이지를 긁었습니다 !\n다음에는 *{page}p* 부터 시작하면 됩니다 !")
+    slack.finalize_message(Site.FMKOREA, start_page, page)
     driver.quit()
 
 
