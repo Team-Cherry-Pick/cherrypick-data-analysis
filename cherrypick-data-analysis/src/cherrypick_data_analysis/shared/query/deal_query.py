@@ -1,6 +1,11 @@
+from typing import List
+
 from cherrypick_data_analysis.shared.database.database import get_session
 from cherrypick_data_analysis.shared.database.model import Deal
 import pandas as pd
+
+from cherrypick_data_analysis.shared.enum.site import Site
+
 
 def get_all_deal_no(deal_no_set) :
     session = get_session()
@@ -57,6 +62,22 @@ def get_all_deals_dataframe():
             "store" : d.store,
             "created_at" : d.created_at,
             "category_name" : d.category.name,
+        } for d in deals
+    ])
+    session.close()
+
+    return df
+
+def get_deals_created_at(siteList:List[Site]) :
+    session = get_session()
+    deals = (session.query(Deal.created_at)
+             .filter(Deal.source_site.in_(siteList))
+             .order_by(Deal.created_at.desc())
+             .all())
+
+    df = pd.DataFrame([
+        {
+            "created_at" : d.created_at
         } for d in deals
     ])
     session.close()

@@ -1,50 +1,60 @@
 import json
+import pickle
 from datetime import datetime
 
 from redis import RedisError
 
-from cherrypick_data_analysis.shared.config.redis import get_redis_client
+from cherrypick_data_analysis.shared.config.redis import get_redis_client, get_redis_client_not_decode
 from cherrypick_data_analysis.shared.enum.crawler_status import Status, DataKey
 from cherrypick_data_analysis.shared.enum.site import Site
+from cherrypick_data_analysis.shared.enum.cachekey import CacheKey
 
 
 def set_crawler_status(site:Site, status:Status):
+    r = get_redis_client()
     try :
-        r = get_redis_client()
         r.set(f"CRAWLER:{site.name}:STATUS", status.name)
     except RedisError as e:
         print(f"redis set error: {e}")
         return None
+    finally:
+        r.close()
 
 
 def get_crawler_status(site:Site):
+    r = get_redis_client()
     try:
-        r = get_redis_client()
         value = str(r.get(f"CRAWLER:{site.name}:STATUS"))
         return Status(value)
     except RedisError as e:
         print(f"redis get error: {e}")
         return ""
+    finally:
+        r.close()
 
 def set_crawler_data(site:Site, data:DataKey, value)->bool:
+    r = get_redis_client()
     try :
-        r = get_redis_client()
         r.hset(f"CRAWLER:{site.name}:DATA", data.name, str(value))
         return True
     except Exception as e:
         print(f"redis hset error: {e}")
         return False
+    finally:
+        r.close()
 
 
 def get_crawler_data(site:Site, data:DataKey):
+    r = get_redis_client()
     try :
-        r = get_redis_client()
         value = str(r.hget(f"CRAWLER:{site.name}:DATA", data.name))
         #print(value)
         return value
     except Exception as e:
         print(f"redis hget error: {e}")
         return ""
+    finally:
+        r.close()
 
 def calculate_average_duration(site:Site) -> float:
     from datetime import datetime
@@ -73,15 +83,45 @@ def initialize_redis(site:Site):
 
     except Exception as e:
         print(f"redis STREAMS error: {e}")
+    finally:
+        r.close()
 
 
 def save_error_log(site:Site, error, message) :
+    r = get_redis_client()
     try :
-        r = get_redis_client()
         print(f"error: {error}, message: {message}", flush=True)
         r.xadd(f"CRAWLER:{site.name}:ERRORS", {"error": str(error), "message": str(message)})
     except RedisError as e:
         print(f"redis log save error: {e}")
+    finally:
+        r.close()
 
 def get_start_page(site:Site) :
     return int(get_crawler_data(site, DataKey.NOW_CRAWLING))
+
+def set_cache(key : CacheKey, value) :
+    r = get_redis_client_not_decode()
+    try :
+        r.set(key.value, pickle.dumps(value))
+        r.close()
+    except RedisError as e:
+        print(f"redis cache set error: {e}")
+        return None
+    finally:
+        r.close()
+
+
+def get_cache(key: CacheKey):
+    r = get_redis_client_not_decode()
+    try:
+        raw = r.get(key.value)
+        if raw is None:
+            return None
+        result = pickle.loads(raw)
+        return result
+    except Exception as e:
+        print(f"[RedisCacheError] {e}")
+        return None
+    finally:
+        r.close()
