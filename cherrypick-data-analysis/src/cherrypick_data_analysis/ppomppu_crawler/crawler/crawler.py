@@ -1,8 +1,11 @@
 from time import sleep
 
 from selenium.webdriver.chrome.webdriver import WebDriver
+from random import randint
+from shared.enum.crawler_status import DataKey
 from shared.util.crawl_util import parse_html
 from shared.enum.site import Site
+from shared.util.redis_util import get_crawler_data
 
 
 def get_raw_page_include_comments(driver:WebDriver, no) :
@@ -16,7 +19,8 @@ def get_raw_page_include_comments(driver:WebDriver, no) :
         driver.get(f"https://www.ppomppu.co.kr/zboard/comment.php?id=ppomppu&no={str(no)}&c_page={str(i)}")
         comments = driver.page_source
         total_html += comments
-        sleep(1)
+
+        sleep(randint(1, int(get_crawler_data(Site.PPOMPPU, DataKey.DELAY_TIME))))
 
     return total_html
 
