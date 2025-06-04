@@ -1,23 +1,10 @@
-import traceback
-from datetime import datetime, timedelta
-import re
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-from urllib.parse import urlparse
 from shared.dto.page_dto import DealDTO
-from shared.enum.price_type import PriceType
-import requests
-from shared.enum.site import Site
-from shared.util.redis_util import save_error_log
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-
+import undetected_chromedriver as uc
 
 def get_driver():
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless')
+    options = uc.ChromeOptions()
+    options.add_argument('--headless')  # 필요하면 제거
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--lang=ko-KR')
@@ -25,12 +12,13 @@ def get_driver():
                          "AppleWebKit/537.36 (KHTML, like Gecko) "
                          "Chrome/114.0.0.0 Safari/537.36")
 
-    options.binary_location = '/usr/bin/chromium'
+    driver = uc.Chrome(
+        options=options,
+        use_subprocess=True,
+        driver_executable_path='/usr/bin/chromedriver'  # 이거 꼭 추가!
+    )
 
-    # 일반적으로 chromium-driver 설치 시 /usr/bin/chromedriver 경로 사용
-    service = Service('/usr/bin/chromedriver')
-
-    return webdriver.Chrome(service=service, options=options)
+    return driver
 
 
 def parse_html(content) :
