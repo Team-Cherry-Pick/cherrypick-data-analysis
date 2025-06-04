@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Poetry 설치
 RUN curl -sSL https://install.python-poetry.org | python3 -
 ENV PATH="/root/.local/bin:${PATH}"
+ENV STREAMLIT_EMAIL_OPTIN=false
 
 # 프로젝트 의존성 설치
 COPY pyproject.toml poetry.lock ./
@@ -25,7 +26,7 @@ COPY . .
 # 환경 변수 설정
 ENV PYTHONPATH=/app/src
 ENV CHROMIUM_PATH=/usr/bin/chromium
-ENV DISPLAY=:99
+ENV STREAMLIT_EMAIL_OPTIN=false
 
 EXPOSE 8501
 

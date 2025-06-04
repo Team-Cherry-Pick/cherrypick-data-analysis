@@ -97,6 +97,19 @@ def save_error_log(site:Site, error, message) :
     finally:
         r.close()
 
+def get_error_logs(site:Site) :
+    r = get_redis_client()
+    try :
+        logs = r.xrange(f"CRAWLER:{site.name}:ERRORS", count=30)
+        logs.reverse()
+        return logs
+    except RedisError as e:
+        print(f"redis log get error: {e}")
+    finally:
+        r.close()
+
+
+
 def get_start_page(site:Site) :
     return int(get_crawler_data(site, DataKey.NOW_CRAWLING))
 
