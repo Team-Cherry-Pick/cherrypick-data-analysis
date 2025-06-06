@@ -16,7 +16,6 @@ import shared.util.slack_util as slack
 
 site = Site.PPOMPPU
 
-
 def crawl_start(start_page) :
     print("PPOMPPU 크롤링 시작")
     initialize_redis(site)
