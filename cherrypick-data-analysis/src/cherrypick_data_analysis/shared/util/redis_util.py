@@ -100,8 +100,7 @@ def save_error_log(site:Site, error, message) :
 def get_error_logs(site:Site) :
     r = get_redis_client()
     try :
-        logs = r.xrange(f"CRAWLER:{site.name}:ERRORS", count=30)
-        logs.reverse()
+        logs = r.xrevrange(f"CRAWLER:{site.name}:ERRORS", count=30)
         return logs
     except RedisError as e:
         print(f"redis log get error: {e}")
