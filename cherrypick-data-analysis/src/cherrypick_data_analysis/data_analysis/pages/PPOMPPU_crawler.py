@@ -1,11 +1,13 @@
+from datetime import time
+
 import streamlit as st
 from cherrypick_data_analysis.shared.enum.crawler_status import Status, DataKey
 from cherrypick_data_analysis.shared.enum.site import Site
 from cherrypick_data_analysis.shared.util.redis_util import set_crawler_status, get_crawler_data, get_crawler_status, \
-    calculate_average_duration, set_crawler_data
+    calculate_average_duration, set_crawler_data, get_error_logs
 from cherrypick_data_analysis.shared.query.deal_query import get_all_deals_show
 from cherrypick_data_analysis.shared.config.env import MASTER_PASSWORD
-from cherrypick_data_analysis.shared.query.category_query import get_all_category_dataframe
+from cherrypick_data_analysis.shared.config.redis import get_redis_client
 
 # 설정
 ADMIN_PASSWORD = MASTER_PASSWORD # ✅ 비밀번호 설정
@@ -102,10 +104,14 @@ with col5:
 with col6:
     st.metric("😎 마지막 수집 : ", f"{get_crawler_data(Site.PPOMPPU, DataKey.LAST_SAVED_TIME)}")
 
-st.markdown("### 📋 수집된 딜 목록")
-df = get_all_deals_show()
+# 로그 영역
+log_box = st.empty()
 
-if df is not None and not df.empty:
-    st.dataframe(df, use_container_width=True)
-else:
-    st.info("표시할 수 있는 데이터가 없습니다.")
+r = get_redis_client()
+# 자동 갱신
+
+logs = get_error_logs(Site.PPOMPPU)
+with log_box.container():
+    st.markdown("### 최신 로그")
+    for log in logs:
+        st.markdown(f"- `{log}`")

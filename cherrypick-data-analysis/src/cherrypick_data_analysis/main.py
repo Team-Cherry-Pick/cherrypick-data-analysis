@@ -18,7 +18,7 @@ if __name__ == "__main__":
             crawl_start(int(sys.argv[2]))
 
         elif mode == "serve":
-            subprocess.run(["streamlit", "run", "src/cherrypick_data_analysis/data_analysis/app.py", "--server.address=0.0.0.0"])
+            subprocess.run(["streamlit", "run", "src/cherrypick_data_analysis/data_analysis/app.py"])
 
         else:
             print(f"Unknown mode: {mode}")
