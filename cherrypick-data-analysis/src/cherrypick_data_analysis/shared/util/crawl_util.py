@@ -28,7 +28,6 @@ def print_deal_dto(dto: DealDTO):
     print("┌───────────── DealDTO ─────────────┐")
     print(f"│ site           : {dto.source_site}")
     print(f"│ deal_no        : {dto.deal_no}")
-    print(f"│ next_page      : {dto.next_page}")
     print(f"│ username       : {dto.username}")
     print(f"│ title          : {dto.title}")
     print(f"│ content        : {dto.content[:80]}." if dto.content else "│ content        : None")

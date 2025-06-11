@@ -1,9 +1,8 @@
 from time import sleep
-
+from ppomppu_crawler.parser.page_parser import get_comment_count
 from selenium.webdriver.chrome.webdriver import WebDriver
 from random import randint
 
-from ppomppu_crawler.crawler.modules import get_comment_count
 from shared.enum.crawler_status import DataKey
 from shared.util.crawl_util import parse_html
 from shared.enum.site import Site
