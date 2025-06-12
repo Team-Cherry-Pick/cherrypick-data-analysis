@@ -3,10 +3,10 @@ import random
 from time import sleep
 from selenium.webdriver.chrome.webdriver import WebDriver
 from ppomppu_crawler.crawler.crawler import get_raw_page_include_comments
-from ppomppu_crawler.parser.modules import parse_ppomppu
+from ppomppu_crawler.parser.page_parser import parse_ppomppu
 from shared.database.database import *
 from shared.database.model import RawPage
-from shared.query.raw_query import get_all_page_no, get_50_raw_pages
+from shared.query.raw_query import get_all_page_no
 from shared.util import slack_util
 from shared.util.crawl_util import get_driver, parse_html
 from shared.util.redis_util import *
@@ -85,21 +85,6 @@ def crawl_start(start_page) :
     page += 1
     sleep(random.randint(1, int(get_crawler_data(site, DataKey.DELAY_TIME))))
 
-
-
-def test() :
-    page_cnt = 0
-
-    while True :
-        pages = get_50_raw_pages(page_cnt, site)
-        for no, page in pages.items() :
-            parse_ppomppu(no, parse_html(page))
-
-        if len(pages) == 0 : break
-        page_cnt += 1
-
-
-test()
 
 
 # 링크가 아예 없을수도 있음. 그러면 오류

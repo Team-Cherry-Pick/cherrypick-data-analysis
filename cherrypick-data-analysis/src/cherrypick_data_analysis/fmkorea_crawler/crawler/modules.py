@@ -6,7 +6,7 @@ from time import sleep
 from cherrypick_data_analysis.shared.util.crawl_util import *
 from fmkorea_crawler.crawler.parse_commennts import get_comments
 from fmkorea_crawler.crawler.parse_detail_deal import *
-from shared.dto.page_dto import DealDTO, CommentDTO, PageDTO, UserDTO, get_users
+from shared.save_process.page_dto import DealDTO, CommentDTO, PageDTO, UserDTO, get_users
 from shared.enum.price_type import PriceType
 from shared.util.crawl_util import parse_html
 from shared.enum.site import Site

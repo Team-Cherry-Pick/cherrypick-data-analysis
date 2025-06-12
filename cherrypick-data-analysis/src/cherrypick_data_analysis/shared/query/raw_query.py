@@ -12,8 +12,15 @@ def get_all_page_no(page_no_set, site : Site) :
 
     return {d[0] for d in page_no_list}
 
-def get_50_raw_pages(page, site : Site) -> dict:
+def get_all_raw_pages(site : Site) -> dict:
     session = get_session()
-    page_list = session.query(RawPage.page_no, RawPage.raw_html).filter(RawPage.source_site == site.name).offset(page*50).limit(50).all()
+    page_list = session.query(RawPage.page_no, RawPage.raw_html).filter(RawPage.source_site == site.name).all()
     session.close()
     return {d[0]:d[1] for d in page_list}
+
+
+def get_created_at(deal_no:int, site : Site):
+    session = get_session()
+    created_at = session.query(RawPage.created_at).filter(RawPage.page_no == deal_no, RawPage.source_site == site.name).first()
+    session.close()
+    return created_at[0]

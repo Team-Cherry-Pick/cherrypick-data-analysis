@@ -1,5 +1,5 @@
 from time import sleep
-from ppomppu_crawler.parser.page_parser import get_comment_count
+from ppomppu_crawler.parser.deal_parser import get_comment_count
 from selenium.webdriver.chrome.webdriver import WebDriver
 from random import randint
 

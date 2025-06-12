@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from unicodedata import category
 from datetime import datetime
 from shared.database.model import Comment
-from shared.dto.page_dto import UserDTO, PageDTO
+from shared.save_process.page_dto import UserDTO, PageDTO
 from shared.enum.crawler_status import Status, DataKey
 from shared.enum.site import Site
 from shared.database.database import get_session
