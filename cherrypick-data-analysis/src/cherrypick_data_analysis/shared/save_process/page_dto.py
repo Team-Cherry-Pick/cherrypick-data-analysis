@@ -30,6 +30,7 @@ class DealDTO :
     views: int
     comment_count: int
     is_expired : bool
+    is_blinded: bool
 
     store: str
     product_link: str

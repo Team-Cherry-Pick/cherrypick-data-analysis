@@ -11,6 +11,7 @@ from datetime import datetime
 from shared.save_process.data_save_process import data_save_process
 from shared.util.crawl_util import parse_html
 
+
 site = Site.PPOMPPU
 q = queue.Queue()
 def parse_all():
@@ -30,6 +31,10 @@ def parse_all():
 
 
 print(datetime.now())
+
+threading.Thread(target=data_save_process, args=(q, site,)).start()
+threading.Thread(target=data_save_process, args=(q, site,)).start()
+threading.Thread(target=data_save_process, args=(q, site,)).start()
 threading.Thread(target=data_save_process, args=(q, site,)).start()
 parse_all()
 print(datetime.now())

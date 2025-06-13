@@ -27,6 +27,7 @@ class Deal(Base):
 
     source_site = Column(Enum(Site), nullable=True)
     is_published = Column(Boolean, nullable=True, default=False)
+    is_blinded = Column(Boolean, nullable=True, default=False)
     user_id = Column(BIGINT, ForeignKey("user.user_id"), nullable=True)
     category_id = Column(BIGINT, ForeignKey("category.category_id"), nullable=True)
 

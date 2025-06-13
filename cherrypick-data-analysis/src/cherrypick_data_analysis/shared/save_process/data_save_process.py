@@ -48,9 +48,19 @@ def save_users(session:Session, site:Site, pages:List[PageDTO]):
         else :
             if user.appear_time < origin_user.first_appear_time : origin_user.first_appear_time = user.appear_time
 
+    try:
+        session.add_all(user_dict.values())
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        print("[RETRY] 1회 재시도")
+        try:
+            session.add_all(user_dict.values())  # 다시 add 필요
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            raise
 
-    session.add_all(user_dict.values())
-    session.commit()
     return user_dict
 
 def save_deals(session:Session, pages:List[PageDTO], user_dict:dict, category_dict:dict) :
@@ -70,6 +80,8 @@ def save_deals(session:Session, pages:List[PageDTO], user_dict:dict, category_di
         views=deal.views,
         comment_count=deal.comment_count,
         is_expired=deal.is_expired,
+        is_blinded=deal.is_blinded,
+
         store=deal.store,
         product_link=deal.product_link,
         category_id=category_dict[str(deal.deal_no)],

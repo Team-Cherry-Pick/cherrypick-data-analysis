@@ -68,6 +68,7 @@ def parse_fmkorea(driver: WebDriver, deal_no):
             store=store,
             product_link=product_link,
             created_at=created_at,
+            is_blinded=False
         )
 
         #COMMENT

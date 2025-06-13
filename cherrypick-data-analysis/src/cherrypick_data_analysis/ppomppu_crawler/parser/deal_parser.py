@@ -12,6 +12,8 @@ def parse_deal(no, soup: bs4.BeautifulSoup) :
 
     link = get_link(no, soup)
     title = get_title(no, soup)
+    is_blinded = True if "해당글은 운영자에 의해 블라인드 처리된 글입니다." in soup.text else False
+    if is_blinded : print(no)
     return DealDTO(
         source_site=site,
         deal_no=no,
@@ -26,18 +28,18 @@ def parse_deal(no, soup: bs4.BeautifulSoup) :
         views=get_views(no, soup),
         comment_count=get_comment_count(no, soup),
         is_expired=get_is_expired(no, soup),
+        is_blinded = is_blinded,
 
         store=get_store(link),
         product_link=link,
         created_at=get_datetime(no, soup)
-
     )
 
 
 
 def get_username(no, soup: bs4.BeautifulSoup) :
     try :
-        user_tag = soup.select_one("strong.ppomppu a.baseList-name")
+        user_tag = soup.select_one("strong a.baseList-name")
         if user_tag:
             # 1. 텍스트가 존재하면 우선 사용
             username = user_tag.text.strip()
@@ -134,7 +136,7 @@ def get_datetime(no, soup: bs4.BeautifulSoup) -> datetime:
         if date_li and "등록일" in date_li.text:
             raw = date_li.text.replace("등록일", "").strip()  # "2025-06-10 11:11"
             dt = datetime.datetime.strptime(raw, "%Y-%m-%d %H:%M")
-            return dt.strftime("%Y-%m-%d %H:%M:%S")  # 정확히 원하는 포맷
+            return dt  # 정확히 원하는 포맷
         else:
             return None
     except Exception as e :
@@ -201,8 +203,8 @@ def get_currency_from_title(no, soup: bs4.BeautifulSoup) :
             if re.search(r"\b[\d,]+\b", content):
                 return PriceType.KRW
 
-        return None  # 가격 정보 없음
+        return PriceType.KRW  # 가격 정보 없음
 
     except Exception as e :
         save_error_log(site, "currency parsing error", {"no": no, "error": str(e)})
-        return None
+        return PriceType.KRW

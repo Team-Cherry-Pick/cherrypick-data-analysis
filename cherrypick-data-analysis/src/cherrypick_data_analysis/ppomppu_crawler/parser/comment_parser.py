@@ -23,6 +23,7 @@ def parse_comment(no, soup: BeautifulSoup):
                 created_at=parse_datetime(comment, no)
             )
         )
+
     return comments
 
 def parse_username(comment_div: Tag) -> str:
