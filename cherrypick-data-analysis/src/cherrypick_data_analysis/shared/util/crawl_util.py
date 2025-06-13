@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from shared.save_process.page_dto import DealDTO
+from shared.process.page_dto import DealDTO
 import undetected_chromedriver as uc
 
 def get_driver():

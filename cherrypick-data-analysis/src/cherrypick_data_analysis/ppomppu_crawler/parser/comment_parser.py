@@ -3,8 +3,8 @@ from datetime import datetime
 from bs4 import BeautifulSoup, Tag
 
 from shared.enum.site import Site
-from shared.query.raw_query import get_created_at
-from shared.save_process.page_dto import CommentDTO
+from shared.database.query.raw_query import get_created_at
+from shared.process.page_dto import CommentDTO
 
 site = Site.PPOMPPU
 

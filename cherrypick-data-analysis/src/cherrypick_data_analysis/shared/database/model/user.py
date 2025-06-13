@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, BIGINT, DateTime, Enum
+from sqlalchemy import Column, String, BIGINT, DateTime, Enum, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from cherrypick_data_analysis.shared.enum.site import Site
@@ -14,6 +14,9 @@ class User(Base):
     first_appear_time = Column(DateTime, nullable=False)
     last_appear_time = Column(DateTime, nullable=False)
 
-
     deals = relationship("Deal", back_populates="user", cascade="all, delete-orphan")
     comments = relationship("Comment", back_populates="user", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        UniqueConstraint('username', 'source_site', name='uq_username_source_site'),
+    )

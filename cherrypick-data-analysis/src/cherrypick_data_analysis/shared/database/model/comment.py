@@ -19,5 +19,5 @@ class Comment(Base):
     user_id = Column(BIGINT, ForeignKey("user.user_id"), nullable=False)
 
     # 관계 설정
-    user = relationship("User", back_populates="comments")
-    deal = relationship("Deal", back_populates="comments")
+    user = relationship("User", back_populates="comments", cascade="all")
+    deal = relationship("Deal", back_populates="comments", cascade="all")

@@ -2,12 +2,10 @@ import queue
 import time
 import traceback
 from typing import List
-
 from sqlalchemy.orm import Session
-from unicodedata import category
 from datetime import datetime
 from shared.database.model import Comment
-from shared.save_process.page_dto import UserDTO, PageDTO
+from shared.process.page_dto import UserDTO, PageDTO
 from shared.enum.crawler_status import Status, DataKey
 from shared.enum.site import Site
 from shared.database.database import get_session
@@ -55,15 +53,17 @@ def save_users(session:Session, site:Site, pages:List[PageDTO]):
         session.rollback()
         print("[RETRY] 1회 재시도")
         try:
-            session.add_all(user_dict.values())  # 다시 add 필요
+            for user in user_dict.values():  # 하나씩 merge
+                merged_user = session.merge(user)
+                user_dict[user.username] = merged_user
+
             session.commit()
         except Exception as e:
             session.rollback()
             raise
-
     return user_dict
 
-def save_deals(session:Session, pages:List[PageDTO], user_dict:dict, category_dict:dict) :
+def save_deals(session:Session, pages:List[PageDTO], user_dict:dict) :
 
     deals = [page.deal for page in pages]
     deal_dict = {int(deal.deal_no): Deal(
@@ -84,7 +84,7 @@ def save_deals(session:Session, pages:List[PageDTO], user_dict:dict, category_di
 
         store=deal.store,
         product_link=deal.product_link,
-        category_id=category_dict[str(deal.deal_no)],
+        category_id=deal.category_id,
         created_at=deal.created_at
     ) for deal in deals}
 
@@ -114,8 +114,8 @@ def save_comments(session:Session, pages, deal_dict:dict, user_dict:dict):
 
 
 def data_save_process(q : queue, source_site : Site):
-    batch_size = 5
-    timeout = 30
+    batch_size = 100
+    timeout = 60
 
     while True:
         batch = []
@@ -153,8 +153,7 @@ def data_save_process(q : queue, source_site : Site):
             user_dict = save_users(session, source_site, batch)
 
             # DEAL 저장
-            category_dict = get_category_dict(batch)
-            deal_dict = save_deals(session, batch, user_dict, category_dict)
+            deal_dict = save_deals(session, batch, user_dict)
 
             # COMMENT 저장
             save_comments(session, batch, deal_dict, user_dict)
@@ -170,15 +169,6 @@ def data_save_process(q : queue, source_site : Site):
             # 에러난 애들 더해줌
             FAILURE_COUNT += len(batch)
             set_crawler_data(source_site, DataKey.FAILURE_COUNT, FAILURE_COUNT)
-
-
-def get_category_dict(batch) :
-    dict_list = [{
-        "deal_no": dto.deal.deal_no,
-        "title": dto.deal.title,
-        "content": dto.deal.content,
-    } for dto in batch]
-    return classify_deals(dict_list)
 
 
 

@@ -3,9 +3,8 @@ from cherrypick_data_analysis.shared.enum.crawler_status import Status, DataKey
 from cherrypick_data_analysis.shared.enum.site import Site
 from cherrypick_data_analysis.shared.util.redis_util import set_crawler_status, get_crawler_data, get_crawler_status, \
     calculate_average_duration, set_crawler_data
-from cherrypick_data_analysis.shared.query.deal_query import get_all_deals_show
+from cherrypick_data_analysis.shared.database.query.deal_query import get_all_deals_show
 from cherrypick_data_analysis.shared.config.env import MASTER_PASSWORD
-from cherrypick_data_analysis.shared.query.category_query import get_all_category_dataframe
 
 # 설정
 ADMIN_PASSWORD = MASTER_PASSWORD # ✅ 비밀번호 설정

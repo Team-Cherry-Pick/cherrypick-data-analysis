@@ -1,10 +1,7 @@
 from typing import List
 import pandas as pd
-from cherrypick_data_analysis.shared.database.database import get_session
-from cherrypick_data_analysis.shared.database.model import Deal
-from cherrypick_data_analysis.shared.enum.site import Site
 from cherrypick_data_analysis.shared.util.redis_util import *
-from cherrypick_data_analysis.shared.query.deal_query import get_all_deals_dataframe
+from shared.database.query import get_all_deals_dataframe
 
 
 # 월별 게시물 수 추이

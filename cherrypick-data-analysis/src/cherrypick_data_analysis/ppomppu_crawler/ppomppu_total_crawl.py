@@ -1,13 +1,10 @@
-import queue
 import random
 from time import sleep
 from selenium.webdriver.chrome.webdriver import WebDriver
 from ppomppu_crawler.crawler.crawler import get_raw_page_include_comments
-from ppomppu_crawler.parser.page_parser import parse_ppomppu
 from shared.database.database import *
 from shared.database.model import RawPage
-from shared.query.raw_query import get_all_page_no
-from shared.util import slack_util
+from shared.database.query import get_all_page_no
 from shared.util.crawl_util import get_driver, parse_html
 from shared.util.redis_util import *
 import shared.util.slack_util as slack

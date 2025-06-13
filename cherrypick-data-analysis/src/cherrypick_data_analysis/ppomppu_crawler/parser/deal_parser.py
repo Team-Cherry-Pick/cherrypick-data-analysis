@@ -1,7 +1,7 @@
 import bs4
 import re
 import datetime
-from shared.save_process.page_dto import DealDTO
+from shared.process.page_dto import DealDTO
 from shared.enum.price_type import PriceType
 from shared.enum.site import Site
 from shared.util.global_parse_util import get_store
@@ -32,7 +32,8 @@ def parse_deal(no, soup: bs4.BeautifulSoup) :
 
         store=get_store(link),
         product_link=link,
-        created_at=get_datetime(no, soup)
+        created_at=get_datetime(no, soup),
+        category_id=None
     )
 
 

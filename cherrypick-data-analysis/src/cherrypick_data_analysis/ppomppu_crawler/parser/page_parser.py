@@ -2,7 +2,7 @@ import bs4
 
 from ppomppu_crawler.parser.comment_parser import parse_comment
 from ppomppu_crawler.parser.deal_parser import parse_deal
-from shared.save_process.page_dto import get_users, PageDTO
+from shared.process.page_dto import get_users, PageDTO
 from shared.enum.site import Site
 
 

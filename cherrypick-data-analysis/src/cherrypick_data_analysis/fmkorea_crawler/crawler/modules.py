@@ -1,17 +1,10 @@
-import math
 import traceback
-
 from selenium.webdriver.ie.webdriver import WebDriver
 from time import sleep
-from cherrypick_data_analysis.shared.util.crawl_util import *
 from fmkorea_crawler.crawler.parse_commennts import get_comments
 from fmkorea_crawler.crawler.parse_detail_deal import *
-from shared.save_process.page_dto import DealDTO, CommentDTO, PageDTO, UserDTO, get_users
-from shared.enum.price_type import PriceType
+from shared.process.page_dto import DealDTO, CommentDTO, PageDTO, UserDTO, get_users
 from shared.util.crawl_util import parse_html
-from shared.enum.site import Site
-from bs4 import BeautifulSoup
-
 from shared.util.global_parse_util import *
 from shared.util.redis_util import save_error_log
 
@@ -68,7 +61,8 @@ def parse_fmkorea(driver: WebDriver, deal_no):
             store=store,
             product_link=product_link,
             created_at=created_at,
-            is_blinded=False
+            is_blinded=False,
+            category_id=None
         )
 
         #COMMENT

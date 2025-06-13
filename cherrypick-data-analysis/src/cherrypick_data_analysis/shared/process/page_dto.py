@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import List
 
+from shared.database.model import Category
 from shared.enum.price_type import PriceType
 from shared.enum.site import Site
 
@@ -35,6 +36,7 @@ class DealDTO :
     store: str
     product_link: str
     created_at: datetime
+    category_id: int | None
 
 
 @dataclass

@@ -33,4 +33,4 @@ class Deal(Base):
 
     user = relationship("User", back_populates="deals")
     category = relationship("Category", back_populates="deals")
-    comments = relationship("Comment", back_populates="deal", cascade="all, delete-orphan")
+    comments = relationship("Comment", back_populates="deal", cascade="all")
