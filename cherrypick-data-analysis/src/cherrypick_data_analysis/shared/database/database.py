@@ -9,7 +9,10 @@ from cherrypick_data_analysis.shared.config.env import DB_URL, DB_USERNAME, DB_P
 DATABASE_URL = f"mysql+pymysql://{DB_USERNAME}:{DB_PASSWORD}@{DB_URL}"
 
 # SQLAlchemy 엔진 생성
-engine = create_engine(DATABASE_URL)#, echo=True)
+engine = create_engine(DATABASE_URL,
+                       pool_recycle=28000,
+                       pool_pre_ping=True
+                       )#, echo=True)
 
 # 세션 생성
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

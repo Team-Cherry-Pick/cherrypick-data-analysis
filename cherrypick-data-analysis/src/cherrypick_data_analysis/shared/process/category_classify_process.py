@@ -29,7 +29,6 @@ def category_classify_process(input_q : queue, output_q : queue, source_site : S
                 break
             try:
                 batch.append(input_q.get(timeout=timeout))
-                input_q.task_done()
             except queue.Empty:
                 break
 
@@ -37,7 +36,7 @@ def category_classify_process(input_q : queue, output_q : queue, source_site : S
             continue  # 큐 비었고, 타임아웃됨
 
         try :
-            print(f"START CATEGORY CLASSIFYING {datetime.now()}")
+            #print(f"START CATEGORY CLASSIFYING {datetime.now()}")
             category_dict = get_category_dict(batch)
             set_deal_category(batch, category_dict) # 이 과정을 거쳐 배치에는 카테고리가 심어짐
             for deal in batch:

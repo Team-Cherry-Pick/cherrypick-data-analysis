@@ -37,7 +37,7 @@ def parse_username(comment_div: Tag) -> str:
     """
     b_tag = comment_div.find("b")
     if not b_tag:
-        return "익명"
+        return "[* 비회원 *]"
 
     # 1. 이미지 닉네임 우선
     img_tag = b_tag.find("img")
@@ -50,7 +50,7 @@ def parse_username(comment_div: Tag) -> str:
         return nickname
 
     # 3. fallback
-    return "익명"
+    return "[* 비회원 *]"
 
 
 def parse_content(comment_div: Tag) -> str:

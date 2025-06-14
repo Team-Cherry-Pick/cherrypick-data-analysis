@@ -52,7 +52,7 @@ def get_username(no, soup: bs4.BeautifulSoup) :
             if img_tag and "alt" in img_tag.attrs:
                 return img_tag["alt"].strip()
 
-        return None
+        return "[* 비회원 *]"
 
     except AttributeError as e :
         save_error_log(site, "username parsing error", {"no": no, "error": str(e)})
@@ -68,7 +68,7 @@ def get_title(no, soup: bs4.BeautifulSoup) :
         return title
     except AttributeError as e :
         save_error_log(site, "title parsing error", {"no" : no, "error" : str(e)})
-        return None
+        return ""
 
 def get_content(no, soup: bs4.BeautifulSoup) :
     try :
@@ -79,7 +79,7 @@ def get_content(no, soup: bs4.BeautifulSoup) :
         return content
     except AttributeError as e :
         save_error_log(site, "content parsing error", {"no" : no, "error" : str(e)})
-        return None
+        return ""
 
 
 def get_is_expired(no, soup: bs4.BeautifulSoup) :
@@ -93,7 +93,7 @@ def get_is_expired(no, soup: bs4.BeautifulSoup) :
         return is_expired
     except AttributeError as e :
         save_error_log(site, "is_expired parsing error", {"no" : no, "error" : str(e)})
-        return None
+        return False
 
 
 def get_vote(no, soup: bs4.BeautifulSoup) :
@@ -109,7 +109,7 @@ def get_vote(no, soup: bs4.BeautifulSoup) :
         return upvote - downvote
     except AttributeError as e :
         save_error_log(site, "vote parsing error", {"no" : no, "error" : str(e)})
-        return None
+        return 0
 
 
 
@@ -151,12 +151,12 @@ def get_views(no, soup: bs4.BeautifulSoup) :
             view_text = view_li.text.replace("조회수", "").strip().replace(",", "")
             views = int(view_text)
         else:
-            views = None
+            views = 0
 
         return views
     except (AttributeError, ValueError) as e :
         save_error_log(site, "views parsing error", {"no" : no, "error" : str(e)})
-        return None
+        return 0
 
 
 def get_price_from_title(no, soup: bs4.BeautifulSoup):

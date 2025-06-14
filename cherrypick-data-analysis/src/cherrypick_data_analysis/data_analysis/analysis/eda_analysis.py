@@ -1,11 +1,11 @@
 from typing import List
 import pandas as pd
 from cherrypick_data_analysis.shared.util.redis_util import *
-from shared.database.query import get_all_deals_dataframe
+from cherrypick_data_analysis.shared.database.query.deal_query import get_all_deals_dataframe
 
 
 # 월별 게시물 수 추이
-def get_monthly_deal_post_trend(site_list: List[Site]) -> pd.DataFrame:
+def get_monthly_deal_post_trend(site_list: List[str]) -> pd.DataFrame:
 
     df = get_cache(CacheKey.DEAL_ALL)
     if df is None :

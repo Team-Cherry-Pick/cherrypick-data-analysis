@@ -47,6 +47,7 @@ def save_users(session:Session, site:Site, pages:List[PageDTO]):
             if user.appear_time < origin_user.first_appear_time : origin_user.first_appear_time = user.appear_time
 
     try:
+        print([u.username for u in user_dict.values()])
         session.add_all(user_dict.values())
         session.commit()
     except Exception as e:
@@ -113,22 +114,21 @@ def save_comments(session:Session, pages, deal_dict:dict, user_dict:dict):
 
 
 
-def data_save_process(q : queue, source_site : Site):
+def data_save_process(q, source_site : Site):
     batch_size = 100
-    timeout = 60
+    timeout = 5
 
     while True:
         batch = []
         start = time.time()
 
-        while len(batch) < batch_size and (time.time() - start) < timeout:
-            # 멈춰!!
+        while len(batch) < batch_size and (time.time() - start) < 30:
+            # 멈춰!!x
             status = get_crawler_status(source_site)
             if status == Status.BREAK:
                 break
             try:
                 batch.append(q.get(timeout=timeout))
-                q.task_done()
             except queue.Empty:
                 break
 
@@ -142,13 +142,12 @@ def data_save_process(q : queue, source_site : Site):
             global TOTAL_COUNT
             TOTAL_COUNT += len(batch)
             set_crawler_data(source_site, DataKey.TOTAL_COUNT, TOTAL_COUNT)
-            with q.mutex:
-                set_crawler_data(source_site, DataKey.QUEUED_COUNT, len(q.queue))
 
             #########################
             ###      DB 저장
             #########################
             session = get_session()
+
             # USER 저장
             user_dict = save_users(session, source_site, batch)
 
