@@ -1,3 +1,4 @@
+import traceback
 from datetime import datetime
 
 from bs4 import BeautifulSoup, Tag
@@ -111,5 +112,6 @@ def parse_datetime(comment_div: Tag, no: int) -> datetime:
         else:  # YYYY-MM-DD HH:MM:SS
             return datetime.strptime(raw, "%Y-%m-%d %H:%M:%S")
     except Exception as e:
+        traceback.print_exc()
         print(f"[ERROR] parse_datetime: {e} {raw}")
         return datetime.now()

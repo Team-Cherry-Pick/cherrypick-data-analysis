@@ -39,6 +39,9 @@ def category_classify_process(input_q : queue, output_q : queue, source_site : S
             #print(f"START CATEGORY CLASSIFYING {datetime.now()}")
             category_dict = get_category_dict(batch)
             set_deal_category(batch, category_dict) # 이 과정을 거쳐 배치에는 카테고리가 심어짐
+            while output_q.qsize() > 300 :
+                time.sleep(1)
+
             for deal in batch:
                 output_q.put(deal)
 

@@ -28,6 +28,7 @@ def get_post_count_by_category() -> pd.DataFrame:
         set_cache(CacheKey.DEAL_ALL, df)
 
     df["카테고리"] = df.category_name
+    df = df[df.category_name != "분류불가"]
     grouped = df.groupby(["카테고리"]).size().reset_index(name="게시물 수")
     pivoted = grouped.set_index("카테고리")
     return pivoted

@@ -1,6 +1,5 @@
 from cherrypick_data_analysis.shared.database.database import get_session
 import pandas as pd
-
 from cherrypick_data_analysis.shared.database.model import Category
 
 

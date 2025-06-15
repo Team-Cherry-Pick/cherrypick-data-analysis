@@ -10,6 +10,8 @@ DATABASE_URL = f"mysql+pymysql://{DB_USERNAME}:{DB_PASSWORD}@{DB_URL}"
 
 # SQLAlchemy 엔진 생성
 engine = create_engine(DATABASE_URL,
+                       pool_size=20,
+                       max_overflow=30,
                        pool_recycle=28000,
                        pool_pre_ping=True
                        )#, echo=True)

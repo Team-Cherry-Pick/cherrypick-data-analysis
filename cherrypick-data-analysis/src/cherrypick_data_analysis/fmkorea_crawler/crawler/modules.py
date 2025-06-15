@@ -19,9 +19,7 @@ def parse_fmkorea(driver: WebDriver, deal_no):
     comments = []
     page = PageDTO(
         deal=None,
-        comments=None,
-        users=None,
-        next_page=None
+        comments=None
     )
     try:
         print(f"FM_KOREA PARSE : {datetime.now()}")
@@ -68,12 +66,8 @@ def parse_fmkorea(driver: WebDriver, deal_no):
         #COMMENT
         comments = get_comments(deal_no, driver, soup, comment_count)
 
-        #USER
-        users = get_users(Site.FMKOREA, deal, comments)
-
         page.deal = deal
         page.comments = comments
-        page.users = users
         return page
 
     except Exception as e:

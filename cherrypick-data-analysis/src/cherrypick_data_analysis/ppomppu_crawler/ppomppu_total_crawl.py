@@ -1,15 +1,24 @@
+import multiprocessing
+import queue
 import random
+import threading
 from time import sleep
 from selenium.webdriver.chrome.webdriver import WebDriver
 from ppomppu_crawler.crawler.crawler import get_raw_page_include_comments
+from ppomppu_crawler.parser.page_parser import parse_ppomppu
+from ppomppu_crawler.parser.raw_page_parser import parse_process
 from shared.database.database import *
 from shared.database.model import RawPage
-from shared.database.query import get_all_page_no
+from shared.database.query.raw_query import get_all_page_no
+from shared.process.category_classify_process import category_classify_process
+from shared.process.data_save_process import data_save_process
 from shared.util.crawl_util import get_driver, parse_html
 from shared.util.redis_util import *
 import shared.util.slack_util as slack
 
 site = Site.PPOMPPU
+category_q = queue.Queue()
+saving_q = queue.Queue()
 
 def crawl_start(start_page) :
     print("PPOMPPU 크롤링 시작")
@@ -24,6 +33,9 @@ def crawl_start(start_page) :
     phase = 1 # 500개 크롤링 할때마다 phase가 1 증가
     driver = get_driver()
     slack.init_message(site)
+
+    threading.Thread(target=category_classify_process, args=(category_q, saving_q, site)).start()
+    threading.Thread(target=data_save_process, args=(saving_q, site,)).start()
     while True:
         # 현재 크롤링 중인 페이지를 알림.
         set_crawler_data(site, DataKey.NOW_CRAWLING, page)
@@ -50,12 +62,12 @@ def crawl_start(start_page) :
                 source_site=site.name,
             )
             count += 1
-            set_crawler_data(site, DataKey.TOTAL_COUNT, count)
-            set_crawler_data(site, DataKey.LAST_SAVED_TIME, datetime.now())
-            session.add(raw_page)
-            sleep(random.randint(1, int(get_crawler_data(site, DataKey.DELAY_TIME))))
 
-        session.commit()
+            session.add(raw_page)
+            session.commit()
+            sleep(random.randint(1, int(get_crawler_data(site, DataKey.DELAY_TIME))))
+            category_q.put(parse_ppomppu(no, parse_html(html)))
+            save_error_log(site, "test", f"{no}")
 
         # 만약 break라면 터뜨림
         if get_crawler_status(site=site) == Status.BREAK:
@@ -81,7 +93,6 @@ def crawl_start(start_page) :
     driver.quit()
     page += 1
     sleep(random.randint(1, int(get_crawler_data(site, DataKey.DELAY_TIME))))
-
 
 
 # 링크가 아예 없을수도 있음. 그러면 오류

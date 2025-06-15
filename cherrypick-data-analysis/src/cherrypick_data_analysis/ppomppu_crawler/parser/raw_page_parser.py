@@ -15,7 +15,7 @@ parsing_q = Queue()
 category_q = Queue()
 saving_q = Queue()
 
-def load_process(output_q: Queue):
+def load_process(output_q: Queue, q1, q2):
     session = get_session()
     cnt = 0
     try:
@@ -23,6 +23,7 @@ def load_process(output_q: Queue):
             output_q.put((row.page_no, parse_html(row.raw_html)))
             cnt += 1
             if cnt % 100 == 0:
+                print(f"now queue status : paring={output_q.qsize()} category={q1.qsize()} saving={q2.qsize()}")
                 print(f"{datetime.now()} : {cnt}건 로드 완료")
 
             if output_q.qsize() > 100 :
@@ -36,6 +37,8 @@ def parse_process(input_q: Queue, output_q: Queue):
         try:
             no, raw_html = input_q.get(timeout=100)
             result = parse_ppomppu(no, raw_html)
+            while output_q.qsize() > 100:
+                sleep(1)
             output_q.put(result)
         except Exception:
             break
@@ -47,29 +50,32 @@ if __name__ == '__main__':
 
     workers = []
 
-    print(os.cpu_count())  # 예: 8
-    # 로드 먼저 수행
-    print(f"로더 시작")
-    loader = Process(target=load_process, args=(parsing_q,))
-    loader.start()
-    workers.append(loader)
+    print(os.cpu_count())
 
-    for _ in range(8):
+
+    for _ in range(7):
         print(f"파서 멀티 프로세스 {_}")
         p = Process(target=parse_process, args=(parsing_q, category_q))
         p.start()
         workers.append(p)
 
-    for _ in range(6):
+    for _ in range(3):
         print(f"카테고리 멀티 프로세스 {_}")
         p = Process(target=category_classify_process, args=(category_q, saving_q, site))
         p.start()
         workers.append(p)
 
-    print(f"데이터 저장 멀티 프로세스")
-    saver = Process(target=data_save_process, args=(saving_q, site))
-    saver.start()
-    workers.append(saver)
+    for _ in range(6):
+        print(f"데이터 저장 멀티 프로세스{_}")
+        saver = Process(target=data_save_process, args=(saving_q, site))
+        saver.start()
+        workers.append(saver)
+
+    # 로드 먼저 수행
+    print(f"로더 시작")
+    loader = Process(target=load_process, args=(parsing_q, category_q, saving_q,))
+    loader.start()
+    workers.append(loader)
 
     for p in workers:
         p.join()
