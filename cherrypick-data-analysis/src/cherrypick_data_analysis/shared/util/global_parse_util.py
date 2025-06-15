@@ -1,7 +1,6 @@
 import re
 from datetime import datetime, timedelta
-from urllib.parse import urlparse
-
+from tldextract import tldextract
 import requests
 
 from shared.enum.price_type import PriceType
@@ -37,16 +36,19 @@ def parse_date_time(raw) :
 # 상품 링크에 직접 접속하여 해당 사이트의 탑레벨 도메인을 추출합니다.
 # 알 수 없는 에러가 너무 많이 떠서 ...  그냥 레디스에는 안찍기로 했다.
 # TO DO : 에러 해결
-def get_store(url: str) -> str:
+def get_store(url: str) -> str | None:
     try:
-        response = requests.get(url, allow_redirects=True, timeout=5)
-        from tldextract import tldextract
+        response = requests.get(url, allow_redirects=True, timeout=1)
         ext = tldextract.extract(response.url)
-
         return ext.domain + '.' + ext.suffix
     except requests.RequestException as e:
-        print(f"[ERROR] URL 추적 실패: {e}")
-        return None
+        try :
+            match = re.search(r"host='([^']+)'", str(e))
+            ext = tldextract.extract(match.group(1))
+            return ext.domain + '.' + ext.suffix
+        except Exception as e:
+            return None
+
 
 # origin 가격 문자열에서 가격 숫자를 추출합니다.
 def extract_price(source_site:Site, deal_no, origin: str):

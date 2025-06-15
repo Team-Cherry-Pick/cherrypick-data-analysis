@@ -2,7 +2,7 @@ import math
 
 from bs4 import BeautifulSoup
 from shared.util.crawl_util import parse_html
-from shared.dto.page_dto import CommentDTO
+from shared.process.page_dto import CommentDTO
 from shared.enum.site import Site
 from shared.util.global_parse_util import parse_date_time
 from shared.util.redis_util import save_error_log

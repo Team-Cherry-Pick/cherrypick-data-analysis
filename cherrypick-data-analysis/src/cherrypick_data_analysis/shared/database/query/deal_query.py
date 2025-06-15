@@ -1,9 +1,7 @@
 from typing import List
-
 from cherrypick_data_analysis.shared.database.database import get_session
 from cherrypick_data_analysis.shared.database.model import Deal
 import pandas as pd
-
 from cherrypick_data_analysis.shared.enum.site import Site
 
 
@@ -56,12 +54,12 @@ def get_all_deals_dataframe():
             "is_expired" : d.is_expired,
             "comment_count" : d.comment_count,
             "category_id" : d.category_id,
-            "user_id" : d.user_id,
+            "username" : d.username,
             "is_published" : d.is_published,
             "product_link" : d.product_link,
             "store" : d.store,
             "created_at" : d.created_at,
-            "category_name" : d.category.name,
+            "category_name" : d.category.name
         } for d in deals
     ])
     session.close()

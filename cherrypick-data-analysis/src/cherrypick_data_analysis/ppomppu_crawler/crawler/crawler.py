@@ -1,9 +1,9 @@
+import traceback
 from time import sleep
-
+from ppomppu_crawler.parser.deal_parser import get_comment_count
 from selenium.webdriver.chrome.webdriver import WebDriver
 from random import randint
 
-from ppomppu_crawler.crawler.modules import get_comment_count
 from shared.enum.crawler_status import DataKey
 from shared.util.crawl_util import parse_html
 from shared.enum.site import Site
@@ -17,7 +17,7 @@ def get_raw_page_include_comments(driver:WebDriver, no) :
         soup = parse_html(html)
 
         # 코멘트 개수
-        comment_count = get_comment_count(soup, no)
+        comment_count = get_comment_count(no, soup)
         for i in range(2, comment_count + 1) :
             driver.get(f"https://www.ppomppu.co.kr/zboard/comment.php?id=ppomppu&no={str(no)}&c_page={str(i)}")
             comments = driver.page_source

@@ -14,10 +14,9 @@ class Comment(Base):
     down_vote = Column(Integer, nullable=False)
     source_site = Column(Enum(Site), nullable=False)
     created_at = Column(DateTime, nullable=False)
-
+    username = Column(String(100), nullable=False)
     deal_id = Column(BIGINT, ForeignKey("deal.deal_id"), nullable=False)
-    user_id = Column(BIGINT, ForeignKey("user.user_id"), nullable=False)
+
 
     # 관계 설정
-    user = relationship("User", back_populates="comments")
-    deal = relationship("Deal", back_populates="comments")
+    deal = relationship("Deal", back_populates="comments", cascade="all")

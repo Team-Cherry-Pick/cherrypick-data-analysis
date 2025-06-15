@@ -1,11 +1,8 @@
-from datetime import time
-
 import streamlit as st
 from cherrypick_data_analysis.shared.enum.crawler_status import Status, DataKey
 from cherrypick_data_analysis.shared.enum.site import Site
 from cherrypick_data_analysis.shared.util.redis_util import set_crawler_status, get_crawler_data, get_crawler_status, \
     calculate_average_duration, set_crawler_data, get_error_logs
-from cherrypick_data_analysis.shared.query.deal_query import get_all_deals_show
 from cherrypick_data_analysis.shared.config.env import MASTER_PASSWORD
 from cherrypick_data_analysis.shared.config.redis import get_redis_client
 

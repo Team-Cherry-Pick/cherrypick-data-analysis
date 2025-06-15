@@ -1,4 +1,3 @@
-import math
 import threading
 from queue import Queue
 from selenium.webdriver.chrome.webdriver import WebDriver
@@ -6,9 +5,9 @@ from selenium.webdriver.chrome.webdriver import WebDriver
 from fmkorea_crawler.crawler.modules import parse_fmkorea
 from shared.database.database import engine, Base
 import random
-from shared.query.deal_query import get_all_deal_no
+from shared.database.query.deal_query import get_all_deal_no
 from shared.util.crawl_util import get_driver, parse_html
-from shared.dto.data_save_process import data_save_process
+from shared.process.data_save_process import data_save_process
 from shared.util.redis_util import *
 from time import sleep
 
@@ -21,7 +20,7 @@ def crawl_start(start_page):
     initialize_redis(Site.FMKOREA)
 
     Base.metadata.create_all(engine)
-    thread = threading.Thread(target=data_save_process, args=(q, Site.FMKOREA,)).start()
+    threading.Thread(target=data_save_process, args=(q, Site.FMKOREA,)).start()
 
 
     page = start_page

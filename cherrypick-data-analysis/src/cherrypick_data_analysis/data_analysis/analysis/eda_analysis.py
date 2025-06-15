@@ -1,14 +1,11 @@
 from typing import List
 import pandas as pd
-from cherrypick_data_analysis.shared.database.database import get_session
-from cherrypick_data_analysis.shared.database.model import Deal
-from cherrypick_data_analysis.shared.enum.site import Site
 from cherrypick_data_analysis.shared.util.redis_util import *
-from cherrypick_data_analysis.shared.query.deal_query import get_all_deals_dataframe
+from cherrypick_data_analysis.shared.database.query.deal_query import get_all_deals_dataframe
 
 
 # 월별 게시물 수 추이
-def get_monthly_deal_post_trend(site_list: List[Site]) -> pd.DataFrame:
+def get_monthly_deal_post_trend(site_list: List[str]) -> pd.DataFrame:
 
     df = get_cache(CacheKey.DEAL_ALL)
     if df is None :
@@ -31,6 +28,7 @@ def get_post_count_by_category() -> pd.DataFrame:
         set_cache(CacheKey.DEAL_ALL, df)
 
     df["카테고리"] = df.category_name
+    df = df[df.category_name != "분류불가"]
     grouped = df.groupby(["카테고리"]).size().reset_index(name="게시물 수")
     pivoted = grouped.set_index("카테고리")
     return pivoted
