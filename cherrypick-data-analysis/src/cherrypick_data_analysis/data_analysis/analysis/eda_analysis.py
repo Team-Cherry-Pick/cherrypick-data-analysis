@@ -2,10 +2,12 @@ from typing import List
 import pandas as pd
 from cherrypick_data_analysis.shared.util.redis_util import *
 from cherrypick_data_analysis.shared.database.query.deal_query import get_all_deals_dataframe
-
+import calendar
 
 # 월별 게시물 수 추이
-def get_monthly_deal_post_trend(site_list: List[str]) -> pd.DataFrame:
+def get_monthly_deal_post_trend(site_list: List[str], start_date:datetime, end_date:datetime) -> pd.DataFrame:
+
+    start_date, end_date = get_monthly_range(start_date, end_date)
 
     df = get_cache(CacheKey.DEAL_ALL)
     if df is None :
@@ -13,10 +15,12 @@ def get_monthly_deal_post_trend(site_list: List[str]) -> pd.DataFrame:
         set_cache(CacheKey.DEAL_ALL, df)
 
     df = df[df["source_site"].isin(site_list)]
+    df = df[(df["created_at"] >= start_date) & (df["created_at"] <= end_date)]
     df["사이트"] = df["source_site"]
     df["년월"] = df.created_at.dt.strftime("%y.%m")
     grouped = df.groupby(["년월", "사이트"]).size().reset_index(name="게시글 수")
     pivoted = grouped.pivot(index="년월", columns="사이트", values="게시글 수")
+    pivoted["TOTAL"] = pivoted[site_list].sum(axis=1)
 
     return pivoted
 
@@ -55,3 +59,31 @@ def get_marcket_value_over_time() -> pd.DataFrame:
     pivoted["합계"] = pivoted["USD"] + pivoted["KRW"]
     return pivoted
 
+# 월별 게시물 수 추이
+def get_monthly_deal_view_trend(site_list: List[str], start_date:datetime, end_date:datetime) -> pd.DataFrame:
+
+    start_date, end_date = get_monthly_range(start_date, end_date)
+
+    df = get_cache(CacheKey.DEAL_ALL)
+    if df is None :
+        df = get_all_deals_dataframe()
+        set_cache(CacheKey.DEAL_ALL, df)
+
+    df = df[df["source_site"].isin(site_list)]
+    df = df[(df["created_at"] >= start_date) & (df["created_at"] <= end_date)]
+
+    df["사이트"] = df["source_site"]
+    df["년월"] = df.created_at.dt.strftime("%y.%m")
+    grouped = df.groupby(["년월", "사이트"])["views"].sum().reset_index(name="조회수 합계")
+    pivoted = grouped.pivot(index="년월", columns="사이트", values="조회수 합계")
+    pivoted["TOTAL"] = pivoted[site_list].sum(axis=1)
+
+    return pivoted
+
+def get_monthly_range(start_date, end_date):
+    _, last_day = calendar.monthrange(end_date.year, end_date.month)
+    start_date.replace(day=1)
+    end_date.replace(day=last_day)
+    start_date = pd.to_datetime(start_date)
+    end_date = pd.to_datetime(end_date)
+    return start_date, end_date

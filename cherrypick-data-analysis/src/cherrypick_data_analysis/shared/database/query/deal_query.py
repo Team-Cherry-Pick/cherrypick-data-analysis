@@ -3,7 +3,7 @@ from cherrypick_data_analysis.shared.database.database import get_session
 from cherrypick_data_analysis.shared.database.model import Deal
 import pandas as pd
 from cherrypick_data_analysis.shared.enum.site import Site
-
+from sqlalchemy import func
 
 def get_all_deal_no(deal_no_set) :
     session = get_session()
@@ -80,3 +80,10 @@ def get_deals_created_at(siteList:List[Site]) :
     ])
     session.close()
     return df
+
+def get_deal_count() :
+    session = get_session()
+    result = session.query(Deal.source_site, func.count(Deal.deal_id)).group_by(Deal.source_site).all()
+    return {
+        r[0] : r[1] for r in result
+    }
