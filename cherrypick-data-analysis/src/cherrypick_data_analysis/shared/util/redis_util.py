@@ -1,13 +1,15 @@
 import json
 import pickle
+import traceback
 from datetime import datetime
-
 from redis import RedisError
-
 from cherrypick_data_analysis.shared.config.redis import get_redis_client, get_redis_client_not_decode
 from cherrypick_data_analysis.shared.enum.crawler_status import Status, DataKey
 from cherrypick_data_analysis.shared.enum.site import Site
 from cherrypick_data_analysis.shared.enum.cachekey import CacheKey
+from cherrypick_data_analysis.shared.database.query.deal_query import get_all_deals_dataframe, get_deal_count
+from cherrypick_data_analysis.shared.database.query.comment_query import get_comment_count
+from cherrypick_data_analysis.shared.database.query.comment_query import get_all_comment_dataframe
 
 
 def set_crawler_status(site:Site, status:Status):
@@ -137,3 +139,12 @@ def get_cache(key: CacheKey):
         return None
     finally:
         r.close()
+
+
+def cache_init() :
+    deals = get_all_deals_dataframe()
+    deal_count = get_deal_count()
+    comment_count = get_comment_count()
+    set_cache(CacheKey.DEAL_ALL, deals)
+    set_cache(CacheKey.SITE_DEAL_COUNT, deal_count)
+    set_cache(CacheKey.SITE_COMMENT_COUNT, comment_count)

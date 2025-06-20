@@ -3,7 +3,7 @@ from cherrypick_data_analysis.shared.database.database import get_session
 from cherrypick_data_analysis.shared.database.model import Deal
 import pandas as pd
 from cherrypick_data_analysis.shared.enum.site import Site
-
+from sqlalchemy import func
 
 def get_all_deal_no(deal_no_set) :
     session = get_session()
@@ -80,3 +80,42 @@ def get_deals_created_at(siteList:List[Site]) :
     ])
     session.close()
     return df
+
+def get_deal_count() :
+    session = get_session()
+    result = session.query(Deal.source_site, func.count(Deal.deal_id)).group_by(Deal.source_site).all()
+    return {
+        r[0] : r[1] for r in result
+    }
+
+# 해당 일의 딜 개수 / 조회수 를 불러옴
+def get_total_deal_count_group_by_create_at() :
+    session = get_session()
+    # 쿼리 실행
+    result = session.query(
+        func.date(Deal.created_at),  # created_at에서 년-월-일만 추출
+        Deal.source_site,
+        func.count(Deal.deal_id).label('count'),  # 개수 계산
+        func.sum(Deal.views).label('views'),
+        func.sum(Deal.comment_count).label('comment_count'),
+        func.sum(Deal.vote).label('vote')
+    ).group_by(
+        func.date(Deal.created_at),  # created_at을 기준으로 그룹화
+        Deal.source_site  # source_site 기준으로 그룹화
+    ).all()
+
+    return result
+
+# 유저 당 쓴 글의 개수 / 조회수
+def get_total_deal_user(start_date, end_date) :
+    session = get_session()
+    result = (session.query(Deal.username,
+                            Deal.source_site,
+                            func.count().label('count'),
+                            func.sum(Deal.views).label('views'),
+                            func.sum(Deal.vote),
+                            func.sum(Deal.comment_count))
+              .group_by(Deal.username, Deal.source_site)
+              .filter(start_date <= Deal.created_at, Deal.created_at <= end_date)
+              .all())
+    return result

@@ -23,6 +23,9 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 def get_session()->Session:
     return SessionLocal()
 
+def get_engine() -> create_engine:
+    return create_engine(DATABASE_URL)
+
 logging.basicConfig(level=logging.INFO)
 
 # 모델 정의를 위한 Base 클래스

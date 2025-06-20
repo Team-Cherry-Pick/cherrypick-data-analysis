@@ -1,3 +1,4 @@
+import queue
 import threading
 from queue import Queue
 from selenium.webdriver.chrome.webdriver import WebDriver
@@ -6,6 +7,7 @@ from fmkorea_crawler.crawler.modules import parse_fmkorea
 from shared.database.database import engine, Base
 import random
 from shared.database.query.deal_query import get_all_deal_no
+from shared.process.category_classify_process import category_classify_process
 from shared.util.crawl_util import get_driver, parse_html
 from shared.process.data_save_process import data_save_process
 from shared.util.redis_util import *
@@ -13,14 +15,17 @@ from time import sleep
 
 import shared.util.slack_util as slack
 
-q = Queue()
+category_q = queue.Queue()
+saving_q = queue.Queue()
+
 # 크롤링 하는 본체
 def crawl_start(start_page):
     print("FMKOREA 크롤링 시작")
     initialize_redis(Site.FMKOREA)
 
     Base.metadata.create_all(engine)
-    threading.Thread(target=data_save_process, args=(q, Site.FMKOREA,)).start()
+    threading.Thread(target=category_classify_process, args=(category_q, saving_q, Site.FMKOREA)).start()
+    threading.Thread(target=data_save_process, args=(saving_q, Site.FMKOREA,)).start()
 
 
     page = start_page
@@ -48,7 +53,7 @@ def crawl_start(start_page):
 
         # 해당 링크들 순회하며 dto로 만들어 queue에 담음
         for link in links:
-            q.put(parse_fmkorea(driver, int(link)))
+            category_q.put(parse_fmkorea(driver, int(link)))
             delay = int(get_crawler_data(Site.FMKOREA, DataKey.DELAY_TIME))
             sleep(random.randint(1, delay))
 
