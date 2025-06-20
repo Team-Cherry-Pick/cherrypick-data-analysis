@@ -88,7 +88,7 @@ def get_deal_count() :
         r[0] : r[1] for r in result
     }
 
-# 해당 일의 딜 개수 / 조회수 를 불러옴
+# 해당 일의 딜 개수 / 조회수 를 불러옴.
 def get_total_deal_count_group_by_create_at() :
     session = get_session()
     # 쿼리 실행
@@ -105,7 +105,24 @@ def get_total_deal_count_group_by_create_at() :
     ).all()
 
     return result
+# 해당 시간의 딜 개수 / 조회수 를 불러옴.
+def get_total_deal_count_group_by_hour(start_date, end_date) :
+    session = get_session()
+    # 쿼리 실행
+    result = (session.query(
+        func.date_format(Deal.created_at, '%H'),  # created_at에서 년-월-일만 추출
+        Deal.source_site,
+        func.count(Deal.deal_id).label('count'),  # 개수 계산
+        func.sum(Deal.views).label('views'),
+        func.sum(Deal.comment_count).label('comment_count'),
+        func.sum(Deal.vote).label('vote')
+    ).group_by(
+        func.date_format(Deal.created_at, '%H'),  # created_at을 기준으로 그룹화
+        Deal.source_site  # source_site 기준으로 그룹화
+    ).filter(start_date <= Deal.created_at, Deal.created_at <= end_date)
+    .all())
 
+    return result
 # 유저 당 쓴 글의 개수 / 조회수
 def get_total_deal_user(start_date, end_date) :
     session = get_session()
@@ -119,3 +136,4 @@ def get_total_deal_user(start_date, end_date) :
               .filter(start_date <= Deal.created_at, Deal.created_at <= end_date)
               .all())
     return result
+

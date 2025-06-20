@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from email.policy import default
 
 import streamlit as st
 from streamlit_option_menu import option_menu

@@ -1,3 +1,4 @@
+import pandas as pd
 import streamlit as st
 from matplotlib import pyplot as plt
 from cherrypick_data_analysis.data_analysis.analysis.eda_analysis import *
@@ -48,7 +49,7 @@ def plot_pareto_post_distribution(params : dict):
     selected_sites = params["selected_sites"]
     start_date = params["start_date"]
     end_date = params["end_date"]
-    pareto_df = analyze_pareto_from_user_deals(selected_sites, start_date, end_date)
+    pareto_df = get_analyze_pareto_from_user_deals(selected_sites, start_date, end_date)
     fig = go.Figure()
 
     fig.add_trace(go.Scatter(
@@ -75,7 +76,7 @@ def plot_pareto_comment_distribution(params : dict):
     selected_sites = params["selected_sites"]
     start_date = params["start_date"]
     end_date = params["end_date"]
-    pareto_df = analyze_pareto_from_user_comments(selected_sites, start_date, end_date)
+    pareto_df = get_analyze_pareto_from_user_comments(selected_sites, start_date, end_date)
     fig = go.Figure()
 
     fig.add_trace(go.Scatter(
@@ -102,6 +103,7 @@ def trend_of_post_graph(params):
     selected_sites = params["selected_sites"]
     start_date = params["start_date"]
     end_date = params["end_date"]
+
     df = get_deal_post_trend(selected_sites, start_date, end_date)
     # 시계열 그래프 그리기
     fig = go.Figure()
@@ -109,7 +111,8 @@ def trend_of_post_graph(params):
     # 각 출처별로 시계열 데이터 추가
     for site in df['source_site'].unique():
         site_df = df[df['source_site'] == site]
-        fig.add_trace(go.Scatter(x=site_df['created_at'], y=site_df['deal_count'], mode='lines+markers', name=site))
+        color = Site[site].color
+        fig.add_trace(go.Scatter(x=site_df['created_at'], y=site_df['deal_count'], mode='lines+markers', name=site, line_color=color, marker_color=color))
 
     fig.update_layout(
         title="게시물 수 추이",
@@ -144,7 +147,8 @@ def trend_of_views_graph(params):
     # 각 출처별로 시계열 데이터 추가
     for site in df['source_site'].unique():
         site_df = df[df['source_site'] == site]
-        fig.add_trace(go.Scatter(x=site_df['created_at'], y=site_df['views'], mode='lines+markers', name=site))
+        color = Site[site].color
+        fig.add_trace(go.Scatter(x=site_df['created_at'], y=site_df['views'], mode='lines+markers', name=site, marker_color=color, line_color=color))
 
     fig.update_layout(
         title="총 조회수 추이",
@@ -167,24 +171,36 @@ def trend_of_views_graph(params):
     # Streamlit에 Plotly 차트 출력
     st.plotly_chart(fig)
 
-def line_chart(title:str, key, dataframe) :
-    col1, col2 = st.columns([6.4, 3.6])
-    with col1 :
-        st.markdown(f"### {title}")
-        st.pyplot(dataframe)
-    with col2 :
-        messages = st.container(height=300)
-        if prompt := st.chat_input(key=f"{key}_chat"):
-            messages.chat_message("user").write(prompt)
-            messages.chat_message("assistant").write(f"Echo: {prompt}")
+# 시간 별 딜 게시
+def deal_posts_by_hour(params) :
+    selected_sites = params["selected_sites"]
+    start_date = params["start_date"]
+    end_date = params["end_date"]
+    df = get_analyze_hour_deal(selected_sites, start_date, end_date)
+    df.sort_values(by=['hour', 'source_site'], ascending=True, inplace=True)
+    # Plotly 막대그래프
+    fig = go.Figure()
 
-def bar_chart(title: str, key, dataframe):
+    for site in df['source_site'].unique():
+        site_df = df[df['source_site'] == site]
+        fig.add_trace(go.Bar(
+            x=site_df["hour"],  # X축: 시간대
+            y=site_df["deal_count"],  # Y축: 게시물 수
+            name=site,  # 범례 이름
+            marker_color= site_df['color']  # 막대 색상 설정
+        ))
 
-    col1, col2 = st.columns([6.4, 3.6])
-    with col1 :
-        st.markdown(f"### {title}")
-        st.bar_chart(dataframe)
-    with col2 :
-        st.text_area(f"{key}_memo", height=250)
+    # 레이아웃 설정
+    fig.update_layout(
+        title="시간 별 게시물 수",  # 그래프 제목
+        xaxis_title="Hour of the Day",  # X축 제목
+        yaxis_title="Number of Deal Posts",  # Y축 제목
+        showlegend=True,
+        template="plotly_white"
+    )
+
+    # 그래프 출력
+    fig.show()
+    st.plotly_chart(fig)
 
 
