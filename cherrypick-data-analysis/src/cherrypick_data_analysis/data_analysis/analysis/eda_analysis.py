@@ -1,28 +1,75 @@
+import streamlit as st
 from typing import List
 import pandas as pd
+from matplotlib import pyplot as plt
 from cherrypick_data_analysis.shared.util.redis_util import *
-from cherrypick_data_analysis.shared.database.query.deal_query import get_all_deals_dataframe
 import calendar
+from cherrypick_data_analysis.shared.database.query.deal_query import *
+from cherrypick_data_analysis.shared.database.query.comment_query import *
+
 
 # 월별 게시물 수 추이
-def get_monthly_deal_post_trend(site_list: List[str], start_date:datetime, end_date:datetime) -> pd.DataFrame:
+@st.cache_data
+def get_deal_post_trend(site_list: List[str], start_date: datetime, end_date: datetime) -> pd.DataFrame:
+    # 월별 데이터
+    result = get_cache(CacheKey.DEAL_SHAPE)
+    if result is None:
+        result = get_total_deal_count_group_by_create_at()
+        set_cache(CacheKey.DEAL_SHAPE, result)
 
-    start_date, end_date = get_monthly_range(start_date, end_date)
+    # DataFrame으로 변환
+    df = pd.DataFrame.from_records(result, columns=["created_at", "source_site", "deal_count", "views", "comment_count"])
+    df['source_site'] = df['source_site'].apply(lambda x : x.name)
 
-    df = get_cache(CacheKey.DEAL_ALL)
-    if df is None :
-        df = get_all_deals_dataframe()
-        set_cache(CacheKey.DEAL_ALL, df)
+    # 'created_at' 컬럼을 datetime 형식으로 변환
+    df = df[df['source_site'].isin(site_list)]
+    df = df[(start_date <= df['created_at']) & (df['created_at'] <= end_date)]
+    df['created_at'] = pd.to_datetime(df['created_at'])
+    df = df.sort_values(by='created_at')
 
-    df = df[df["source_site"].isin(site_list)]
-    df = df[(df["created_at"] >= start_date) & (df["created_at"] <= end_date)]
-    df["사이트"] = df["source_site"]
-    df["년월"] = df.created_at.dt.strftime("%y.%m")
-    grouped = df.groupby(["년월", "사이트"]).size().reset_index(name="게시글 수")
-    pivoted = grouped.pivot(index="년월", columns="사이트", values="게시글 수")
-    pivoted["TOTAL"] = pivoted[site_list].sum(axis=1)
+    return df
 
-    return pivoted
+@st.cache_data
+def get_user_deal_shape(site_list: List[str], start_date: datetime, end_date: datetime) -> pd.DataFrame:
+    print(datetime.now())
+    deal_result = get_total_deal_user(start_date, end_date)
+
+    print(datetime.now())
+    deal_df = pd.DataFrame([{
+        "유저명" : data[0],
+        "source_site" : data[1].name,
+        "게시글 수" : data[2],
+        "views" : data[3],
+        "글 추천 수" : data[4]
+    } for data in deal_result])
+    print(datetime.now())
+    df = deal_df[deal_df['source_site'].isin(site_list)]
+    print(datetime.now())
+    return df
+
+@st.cache_data
+def get_user_comment_shape(site_list: List[str], start_date: datetime, end_date: datetime):
+
+    print("코멘트")
+    print(datetime.now())
+    comment_result = get_total_comment_user(start_date, end_date)
+
+    print(datetime.now())
+    # Modin DataFrame으로 변환
+    comment_df = pd.DataFrame.from_records(
+        comment_result,
+        columns=["유저명", "source_site", "comment_count", "추천 수", "비추천 수"]
+    )
+
+    print(datetime.now())
+    # enum -> 문자열로 변환
+    comment_df["source_site"] = comment_df["source_site"].apply(lambda x: x.name)
+    print(datetime.now())
+    # site_list 필터링
+    df = comment_df[comment_df["source_site"].isin(site_list)]
+    print(datetime.now())
+    return df
+
 
 # 카테고리 별 게시글 수
 def get_post_count_by_category() -> pd.DataFrame:
@@ -59,26 +106,7 @@ def get_marcket_value_over_time() -> pd.DataFrame:
     pivoted["합계"] = pivoted["USD"] + pivoted["KRW"]
     return pivoted
 
-# 월별 게시물 수 추이
-def get_monthly_deal_view_trend(site_list: List[str], start_date:datetime, end_date:datetime) -> pd.DataFrame:
 
-    start_date, end_date = get_monthly_range(start_date, end_date)
-
-    df = get_cache(CacheKey.DEAL_ALL)
-    if df is None :
-        df = get_all_deals_dataframe()
-        set_cache(CacheKey.DEAL_ALL, df)
-
-    df = df[df["source_site"].isin(site_list)]
-    df = df[(df["created_at"] >= start_date) & (df["created_at"] <= end_date)]
-
-    df["사이트"] = df["source_site"]
-    df["년월"] = df.created_at.dt.strftime("%y.%m")
-    grouped = df.groupby(["년월", "사이트"])["views"].sum().reset_index(name="조회수 합계")
-    pivoted = grouped.pivot(index="년월", columns="사이트", values="조회수 합계")
-    pivoted["TOTAL"] = pivoted[site_list].sum(axis=1)
-
-    return pivoted
 
 def get_monthly_range(start_date, end_date):
     _, last_day = calendar.monthrange(end_date.year, end_date.month)

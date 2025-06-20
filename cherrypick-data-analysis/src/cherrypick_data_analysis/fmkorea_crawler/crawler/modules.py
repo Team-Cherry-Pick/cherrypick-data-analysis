@@ -3,7 +3,7 @@ from selenium.webdriver.ie.webdriver import WebDriver
 from time import sleep
 from fmkorea_crawler.crawler.parse_commennts import get_comments
 from fmkorea_crawler.crawler.parse_detail_deal import *
-from shared.process.page_dto import DealDTO, CommentDTO, PageDTO, UserDTO, get_users
+from shared.process.page_dto import DealDTO, CommentDTO, PageDTO
 from shared.util.crawl_util import parse_html
 from shared.util.global_parse_util import *
 from shared.util.redis_util import save_error_log

@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 import streamlit as st
 from streamlit_option_menu import option_menu
@@ -18,28 +18,29 @@ def main_title(title:str, caption:str) :
     with st.expander("### Guidelines") :
         st.write("헤헤헤")
 
-def data_status_card() :
+def data_inventory_status_card(site:Site) :
     deal_count_dict = get_cache(CacheKey.SITE_DEAL_COUNT)
     comment_count_dict = get_cache(CacheKey.SITE_COMMENT_COUNT)
+    container = st.container(border=True)
+    with container:
+        st.markdown(f"#### 🟣 {site.name}")
+        st.metric("딜 수", f"{deal_count_dict.get(site, 0):,} 건")
+        st.metric("댓글 수", f"{comment_count_dict.get(site, 0):,} 건")
 
-    st.markdown("### 🗂️ 보유 데이터 현황")
-    col1, col2, col3 = st.columns([3, 3, 4])
-    with col1:
-        st.markdown("#### 🟣 FMKOREA")
-        st.metric("딜 수", f"{deal_count_dict.get(Site.FMKOREA, 0):,} 건")
-        st.metric("댓글 수", f"{comment_count_dict.get(Site.FMKOREA, 0):,} 건")
-
-    with col2:
-        st.markdown("#### 🔵 PPOMPPU")
-        st.metric("딜 수", f"{deal_count_dict.get(Site.PPOMPPU, 0):,} 건")
-        st.metric("댓글 수", f"{comment_count_dict.get(Site.PPOMPPU, 0):,} 건")
 
 def sidebar_filter() :
     with st.sidebar:
-        st.markdown("### 🎛️ 필터")
+        toggle = st.toggle("selector", value=True)
+        st.title("🎛️ 필터")
 
-        start_date = st.date_input("시작 날짜", value=date(2018, 1, 1))
-        end_date = st.date_input("종료 날짜", value=date.today())
+        if toggle :
+            start_date , end_date = st.slider("date range", date(2018, 1, 1), date.today(), (date(2018, 1, 1), date.today()), step=timedelta(days=1), format="y.M.D")
+        else :
+            c1, c2 = st.columns(2)
+            with c1 :
+                start_date = st.date_input("시작일", value=date(2018, 1, 1))
+            with c2:
+                end_date = st.date_input("종료일", value=date.today())
 
         selected_sites = st.multiselect(
             "사이트 선택",

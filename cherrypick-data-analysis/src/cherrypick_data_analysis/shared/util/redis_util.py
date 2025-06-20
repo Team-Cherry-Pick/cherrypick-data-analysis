@@ -142,13 +142,6 @@ def get_cache(key: CacheKey):
 
 
 def cache_init() :
-    print(f"{datetime.now()} : start cache init")
-    try :
-        comments = get_all_comment_dataframe()
-        set_cache(CacheKey.COMMENT_ALL, comments)
-    except Exception as e:
-        traceback.print_exc()
-    print(f"{datetime.now()} : end cache init")
     deals = get_all_deals_dataframe()
     deal_count = get_deal_count()
     comment_count = get_comment_count()

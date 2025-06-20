@@ -3,15 +3,15 @@ from cherrypick_data_analysis.data_analysis.component.graph import *
 
 
 def statistics(start_date, end_date, selected_sites) :
+    tab1, tab2, tab3, tab4 = st.tabs(["활동량", "유저", "게시글", "댓글"])
+    with tab1 :
+        activity_metric(start_date, end_date, selected_sites)
 
-    monthly = get_monthly_deal_post_trend(selected_sites, start_date, end_date)
-    line_chart("🗓️ 딜 콘텐츠 월간 발생량 추이", monthly)
 
-    monthly_view = get_monthly_deal_view_trend(selected_sites, start_date, end_date)
-    line_chart("😉 월별 총 딜 조회수 수 추이", monthly_view)
 
-    size = get_marcket_value_over_time()
-    line_chart("💹 월별 시장 규모 추이", size)
+def activity_metric(start_date, end_date, selected_sites) :
+    active_user_status(selected_sites, start_date, end_date)
+    trend_of_post_graph(selected_sites, start_date, end_date)
+    trend_of_views_graph(selected_sites, start_date, end_date)
 
-    category = get_post_count_by_category()
-    bar_chart("📊 카테고리 별 딜 수", category)
+
