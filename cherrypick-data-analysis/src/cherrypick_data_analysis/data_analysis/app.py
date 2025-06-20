@@ -7,14 +7,20 @@ from cherrypick_data_analysis.shared.database.query.deal_query import get_all_de
 from cherrypick_data_analysis.shared.database.query.comment_query import get_all_comment_dataframe, get_comment_count
 from cherrypick_data_analysis.data_analysis.component.others import *
 from cherrypick_data_analysis.data_analysis.component.graph import *
-from cherrypick_data_analysis.data_analysis.page_module.dashboard import dashboard
-from cherrypick_data_analysis.data_analysis.page_module.statistics import statistics
+from cherrypick_data_analysis.data_analysis.page_module.dashboard_page import dashboard
+from cherrypick_data_analysis.data_analysis.page_module.statistics_page import statistics
 
 st.set_page_config(layout="wide")
+
+params = {}
 selected_page = sidebar_page_selector()
 start_date, end_date, selected_sites = sidebar_filter()
 
+params["start_date"] = start_date
+params["end_date"] = end_date
+params["selected_sites"] = selected_sites
+
 if selected_page == "Dashboard" :
-    dashboard(start_date, end_date, selected_sites)
+    dashboard(params)
 elif selected_page == "Statistics" :
-    statistics(start_date, end_date, selected_sites)
+    statistics(params)

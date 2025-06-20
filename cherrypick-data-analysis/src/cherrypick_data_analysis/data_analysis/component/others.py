@@ -16,7 +16,12 @@ def main_title(title:str, caption:str) :
         if st.button("🔄 캐시 초기화"):
             cache_init()
     with st.expander("### Guidelines") :
-        st.write("헤헤헤")
+        st.caption(f"""
+Dashboard  : 데이터 현황 확인 &nbsp;&nbsp;&nbsp;
+Statistics : 상세 통계 확인 &nbsp;&nbsp;&nbsp;
+Admin      : 관리자 전용 유틸리티 &nbsp;&nbsp;&nbsp;
+데이터는 뽐뿌 / 에펨코리아에서 크롤링해왔으며 추후 자사 데이터도 추가할 예정.
+""")
 
 def data_inventory_status_card(site:Site) :
     deal_count_dict = get_cache(CacheKey.SITE_DEAL_COUNT)
@@ -24,8 +29,8 @@ def data_inventory_status_card(site:Site) :
     container = st.container(border=True)
     with container:
         st.markdown(f"#### 🟣 {site.name}")
-        st.metric("딜 수", f"{deal_count_dict.get(site, 0):,} 건")
-        st.metric("댓글 수", f"{comment_count_dict.get(site, 0):,} 건")
+        st.metric("DEAL", f"{deal_count_dict.get(site, 0):,} 건")
+        st.metric("COMMENT", f"{comment_count_dict.get(site, 0):,} 건")
 
 
 def sidebar_filter() :
@@ -33,8 +38,10 @@ def sidebar_filter() :
         toggle = st.toggle("selector", value=True)
         st.title("🎛️ 필터")
 
+        today = date.today()
         if toggle :
-            start_date , end_date = st.slider("date range", date(2018, 1, 1), date.today(), (date(2018, 1, 1), date.today()), step=timedelta(days=1), format="y.M.D")
+            start_date , end_date = st.slider("date range", value = (today.replace(today.year-3, 1, 1), today), step=timedelta(days=1), format="y.M.D")
+
         else :
             c1, c2 = st.columns(2)
             with c1 :

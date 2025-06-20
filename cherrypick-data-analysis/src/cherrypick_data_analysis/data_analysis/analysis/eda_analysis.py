@@ -12,13 +12,10 @@ from cherrypick_data_analysis.shared.database.query.comment_query import *
 @st.cache_data
 def get_deal_post_trend(site_list: List[str], start_date: datetime, end_date: datetime) -> pd.DataFrame:
     # 월별 데이터
-    result = get_cache(CacheKey.DEAL_SHAPE)
-    if result is None:
-        result = get_total_deal_count_group_by_create_at()
-        set_cache(CacheKey.DEAL_SHAPE, result)
+    result = get_total_deal_count_group_by_create_at()
 
     # DataFrame으로 변환
-    df = pd.DataFrame.from_records(result, columns=["created_at", "source_site", "deal_count", "views", "comment_count"])
+    df = pd.DataFrame.from_records(result, columns=["created_at", "source_site", "deal_count", "views", "comment_count", "vote_count"])
     df['source_site'] = df['source_site'].apply(lambda x : x.name)
 
     # 'created_at' 컬럼을 datetime 형식으로 변환
@@ -34,42 +31,92 @@ def get_user_deal_shape(site_list: List[str], start_date: datetime, end_date: da
     print(datetime.now())
     deal_result = get_total_deal_user(start_date, end_date)
 
-    print(datetime.now())
     deal_df = pd.DataFrame([{
-        "유저명" : data[0],
+        "username" : data[0],
         "source_site" : data[1].name,
-        "게시글 수" : data[2],
+        "deal_count" : data[2],
         "views" : data[3],
-        "글 추천 수" : data[4]
+        "vote" : data[4],
+        "comment_count" : data[5]
     } for data in deal_result])
-    print(datetime.now())
+
     df = deal_df[deal_df['source_site'].isin(site_list)]
-    print(datetime.now())
     return df
+
+@st.cache_data
+def analyze_pareto_from_user_deals(
+    site_list: List[str],
+    start_date: datetime,
+    end_date: datetime
+) -> pd.DataFrame:
+    """
+    주어진 기간과 사이트 리스트에 따라 유저별 게시글 파레토 분석 결과 반환
+    """
+    # 유저별 deal 데이터 가져오기
+    deal_df = get_user_deal_shape(site_list, start_date, end_date)
+
+    # 게시글 수 기준 내림차순 정렬
+    df_sorted = deal_df.sort_values(by="deal_count", ascending=False).reset_index(drop=True)
+
+    # 누적 게시글 수 및 비율 계산
+    total_deals = df_sorted["deal_count"].sum()
+    df_sorted["cumulative_post"] = df_sorted["deal_count"].cumsum()
+    df_sorted["cumulative_post_ratio"] = df_sorted["cumulative_post"] / total_deals
+
+    # 유저 비율 계산
+    df_sorted["user_ratio"] = (df_sorted.index + 1) / len(df_sorted)
+
+    return df_sorted[[
+        "username", "source_site", "deal_count",
+        "user_ratio", "cumulative_post_ratio"
+    ]]
+
 
 @st.cache_data
 def get_user_comment_shape(site_list: List[str], start_date: datetime, end_date: datetime):
 
-    print("코멘트")
-    print(datetime.now())
     comment_result = get_total_comment_user(start_date, end_date)
 
-    print(datetime.now())
     # Modin DataFrame으로 변환
     comment_df = pd.DataFrame.from_records(
         comment_result,
-        columns=["유저명", "source_site", "comment_count", "추천 수", "비추천 수"]
+        columns=["username", "source_site", "comment_count", "upvote", "downvote"]
     )
 
-    print(datetime.now())
     # enum -> 문자열로 변환
     comment_df["source_site"] = comment_df["source_site"].apply(lambda x: x.name)
-    print(datetime.now())
     # site_list 필터링
     df = comment_df[comment_df["source_site"].isin(site_list)]
-    print(datetime.now())
+
     return df
 
+@st.cache_data
+def analyze_pareto_from_user_comments(
+    site_list: List[str],
+    start_date: datetime,
+    end_date: datetime
+) -> pd.DataFrame:
+    """
+    주어진 기간과 사이트 리스트에 따라 유저별 게시글 파레토 분석 결과 반환
+    """
+    # 유저별 deal 데이터 가져오기
+    comment_df = get_user_comment_shape(site_list, start_date, end_date)
+
+    # 게시글 수 기준 내림차순 정렬
+    df_sorted = comment_df.sort_values(by="comment_count", ascending=False).reset_index(drop=True)
+
+    # 누적 게시글 수 및 비율 계산
+    total_deals = df_sorted["comment_count"].sum()
+    df_sorted["cumulative_post"] = df_sorted["comment_count"].cumsum()
+    df_sorted["cumulative_post_ratio"] = df_sorted["cumulative_post"] / total_deals
+
+    # 유저 비율 계산
+    df_sorted["user_ratio"] = (df_sorted.index + 1) / len(df_sorted)
+
+    return df_sorted[[
+        "username", "source_site", "comment_count",
+        "user_ratio", "cumulative_post_ratio"
+    ]]
 
 # 카테고리 별 게시글 수
 def get_post_count_by_category() -> pd.DataFrame:
