@@ -8,6 +8,9 @@ from cherrypick_data_analysis.shared.enum.cachekey import CacheKey
 from cherrypick_data_analysis.shared.enum.site import Site
 from streamlit_option_menu import option_menu
 
+# 'authorization'의 'auth' 딕셔너리 가져오기
+auth = st.secrets["authorization"]["auth"]
+
 def main_title(title:str, caption:str) :
     col1, col2 = st.columns([8, 1])
     with col1:
@@ -33,6 +36,28 @@ def data_inventory_status_card(site:Site) :
         st.metric("DEAL", f"{deal_count_dict.get(site, 0):,} 건")
         st.metric("COMMENT", f"{comment_count_dict.get(site, 0):,} 건")
 
+def sidebar_login() :
+
+    with st.sidebar :
+        # 'key'가 없으면 None으로 초기화
+        if "key" not in st.session_state:
+            st.session_state["key"] = None
+
+        with st.sidebar:
+            if st.session_state["key"] is None:
+                key = st.text_input("login", placeholder="Enter your key",  label_visibility="hidden")
+                if st.button("login"):
+                    if key:  # 로그인할 때 key 값이 비어있지 않으면
+                        if key not in auth.values() :
+                            if key in list(auth):
+                                key = auth[key]
+                            st.session_state["key"] = key
+                            st.toast("로그인 성공 !")
+
+                        else : st.toast("다른 key로 로그인해주세요 !")
+                    else : st.toast("key를 입력해주세요 !")
+            else:
+                st.write(f"hello ! {st.session_state['key']}")
 
 def sidebar_filter() :
     with st.sidebar:

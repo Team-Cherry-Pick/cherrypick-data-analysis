@@ -1,7 +1,7 @@
 import enum
 
 class Site(enum.Enum):
-
+# color_code = https://colorhunt.co/palette/309898ff9f00f4631ecb0404
     def __new__(cls, site_name, deal_detail_url, deal_list_url, color):
         obj = object.__new__(cls)
         obj._value_ = (site_name, deal_detail_url)
