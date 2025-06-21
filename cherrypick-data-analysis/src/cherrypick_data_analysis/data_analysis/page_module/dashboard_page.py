@@ -16,6 +16,8 @@ def dashboard(params) :
         data_inventory_status_card(Site.FMKOREA)
     with col2 :
         data_inventory_status_card(Site.PPOMPPU)
+
+    memo_component("main", 400)
     st.divider()
     st.markdown("## 🗂️ 기간별 활동량 개요")
 

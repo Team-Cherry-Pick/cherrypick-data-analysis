@@ -1,12 +1,12 @@
-from datetime import date, timedelta
-from email.policy import default
-
+from datetime import date, timedelta, datetime
 import streamlit as st
-from streamlit_option_menu import option_menu
+from streamlit import empty
+
 from cherrypick_data_analysis.shared.util.redis_util import cache_init, get_cache
 from cherrypick_data_analysis.shared.enum.cachekey import CacheKey
 from cherrypick_data_analysis.shared.enum.site import Site
 from streamlit_option_menu import option_menu
+from cherrypick_data_analysis.shared.util.redis_util import get_memo_list, push_memo
 
 # 'authorization'의 'auth' 딕셔너리 가져오기
 auth = st.secrets["authorization"]["auth"]
@@ -43,21 +43,20 @@ def sidebar_login() :
         if "key" not in st.session_state:
             st.session_state["key"] = None
 
-        with st.sidebar:
-            if st.session_state["key"] is None:
-                key = st.text_input("login", placeholder="Enter your key",  label_visibility="hidden")
-                if st.button("login"):
-                    if key:  # 로그인할 때 key 값이 비어있지 않으면
-                        if key not in auth.values() :
-                            if key in list(auth):
-                                key = auth[key]
-                            st.session_state["key"] = key
-                            st.toast("로그인 성공 !")
-
-                        else : st.toast("다른 key로 로그인해주세요 !")
-                    else : st.toast("key를 입력해주세요 !")
-            else:
-                st.write(f"hello ! {st.session_state['key']}")
+        if st.session_state["key"] is None:
+            key = st.text_input("login", placeholder="Enter your key",  label_visibility="hidden")
+            if st.button("login"):
+                if key:  # 로그인할 때 key 값이 비어있지 않으면
+                    if key not in auth.values() :
+                        if key in list(auth):
+                            key = auth[key]
+                        st.session_state["key"] = key
+                        st.toast("로그인 성공 !")
+                        st.balloons()
+                    else : st.toast("다른 key로 로그인해주세요 !")
+                else : st.toast("key를 입력해주세요 !")
+        else:
+            st.write(f"hello ! {st.session_state['key']}, nice to meet you!")
 
 def sidebar_filter() :
     with st.sidebar:
@@ -92,7 +91,28 @@ def sidebar_page_selector() :
       selected = option_menu(
         "datalab",
         ["Dashboard", "Statistics", "Admin"] ,
+        menu_icon="bookmark-star-fill",
         icons=["compass-fill", "bar-chart-line-fill", "file-person-fill"],
         default_index=0
       )
     return selected
+
+def memo_component(key : str, height:int) :
+    con = st.container(height=height)
+
+    with con :
+        memo_list = get_memo_list(key)
+        messages = st.container(height= height-100)
+        if not memo_list :
+            messages.write("첫 메모를 남겨보세요 !")
+        for memo in memo_list :
+            with messages.chat_message("user") :
+                st.write(f"{memo['writer']} | {memo['created_at']}")
+                st.write(f"{memo['content']}")
+        if st.session_state['key'] is not None :
+            if prompt := st.chat_input("Say something"):
+                memo = {"writer" : st.session_state['key'], "content" : prompt, "created_at" : datetime.now().strftime("%Y.%m.%d %H:%M")}
+                push_memo(key, memo)
+                with messages.chat_message("user"):
+                    st.write(f"{memo['writer']} | {memo['created_at']}")
+                    st.write(f"{memo['content']}")

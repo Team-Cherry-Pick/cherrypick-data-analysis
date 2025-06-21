@@ -148,3 +148,25 @@ def cache_init() :
     set_cache(CacheKey.DEAL_ALL, deals)
     set_cache(CacheKey.SITE_DEAL_COUNT, deal_count)
     set_cache(CacheKey.SITE_COMMENT_COUNT, comment_count)
+
+def get_memo_list(key:str) -> list:
+    r = get_redis_client_not_decode()
+    try :
+         memo_list = r.lrange(f"SERVE:MEMO:{key}", 0 ,-1)
+         memo_list = [pickle.loads(raw) for raw in memo_list]
+         memo_list.reverse()
+         return memo_list
+    except Exception as e:
+        print(f"redis cache get error: {e}")
+        return []
+    finally:
+        r.close()
+
+def push_memo(key, memo) :
+    r = get_redis_client_not_decode()
+    try :
+        r.lpush(f"SERVE:MEMO:{key}", pickle.dumps(memo))
+    except RedisError as e:
+        print(f"redis cache get error: {e}")
+    finally:
+        r.close()

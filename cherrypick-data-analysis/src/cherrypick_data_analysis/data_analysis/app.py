@@ -22,6 +22,7 @@ params["end_date"] = end_date
 params["selected_sites"] = selected_sites
 
 
+
 if selected_page == "Dashboard" :
     dashboard(params)
 elif selected_page == "Statistics" :
