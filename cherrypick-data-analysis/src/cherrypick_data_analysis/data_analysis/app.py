@@ -13,12 +13,15 @@ from cherrypick_data_analysis.data_analysis.page_module.statistics_page import s
 st.set_page_config(layout="wide")
 
 params = {}
+sidebar_login()
 selected_page = sidebar_page_selector()
 start_date, end_date, selected_sites = sidebar_filter()
 
 params["start_date"] = start_date
 params["end_date"] = end_date
 params["selected_sites"] = selected_sites
+
+
 
 if selected_page == "Dashboard" :
     dashboard(params)

@@ -1,13 +1,17 @@
 from cherrypick_data_analysis.data_analysis.analysis.eda_analysis import *
 from cherrypick_data_analysis.data_analysis.component.graph import *
-
+from cherrypick_data_analysis.data_analysis.component.others import memo_component
 
 def statistics(params : dict) :
+    memo_flag = st.toggle("메모")
+    params["memo_flag"] = memo_flag
     tab1, tab2, tab3, tab4 = st.tabs(["활동량", "유저", "게시글", "댓글"])
     with tab1 :
         activity_metric(params)
     with tab2 :
         user_metric(params)
+    with tab3 :
+        deal_metric(params)
 
 def activity_metric(params : dict) :
 
@@ -35,24 +39,42 @@ def activity_metric(params : dict) :
     trend_of_views_graph(params)
 
 def user_metric(params : dict) :
+
     with st.expander("Explanation") :
         st.html(
             """
-                    분석에 앞서 상위 소비자 그룹에서 상위 공급자 그룹과 겹치는 유저가 다수 보임. <br>
-                    공급자가 본인의 게시물에 댓글을 다는 케이스를 배제해야할 듯 함.<br>
-            
-                    게시물의 경우 상위 10%의 활동량을 가진 유저가 67%의 게시물을 올림.<br>
-                    댓글의 경우 상위 10%의 유저가 70%의 댓글을 달았음.<br><br>
-                    
-                    최상위 유저들이 대부분의 비중을 가진 양상.<br><br>
-            
-                    조금 비약하자면 공급자 / 소비자 그래프 라고도 생각할 수 있음. <br>
+                잠드는 새벽 시간을 제외하면 글이 골고루 올라오는 편이다.<br>
+                가장 많은 글이 올라오는 시간대는 00시, 10시, 11시로, 17시 순.<br>
+                재밌는 점은 23시와 00시의 게시글 수 차이가 매우 크다는 점. <br>
             """)
-    col1, col2 = st.columns(2)
-    with col1 :
-        plot_pareto_post_distribution(params)
-    with col2 :
-        plot_pareto_comment_distribution(params)
+
+    deal_posts_by_hour(params)
+
+    selected_graphs = st.multiselect(
+        "WHAT GRAPH ?",
+        options=["유저 누적 기여도 그래프"],
+        default=[]
+    )
+
+    if  "유저 누적 기여도 그래프" in selected_graphs :
+        with st.expander("Explanation"):
+            st.html(
+                """
+                        분석에 앞서 상위 소비자 그룹에서 상위 공급자 그룹과 겹치는 유저가 다수 보임. <br>
+                        공급자가 본인의 게시물에 댓글을 다는 케이스를 배제해야할 듯 함.<br>
+
+                        게시물의 경우 상위 10%의 활동량을 가진 유저가 67%의 게시물을 올림.<br>
+                        댓글의 경우 상위 10%의 유저가 70%의 댓글을 달았음.<br><br>
+
+                        최상위 유저들이 대부분의 비중을 가진 양상.<br><br>
+
+                        조금 비약하자면 공급자 / 소비자 그래프 라고도 생각할 수 있음. <br>
+                """)
+        col1, col2 = st.columns(2)
+        with col1 :
+            plot_pareto_post_distribution(params)
+        with col2 :
+            plot_pareto_comment_distribution(params)
 
 def deal_metric(params : dict) :
-    "asdf"
+    category_deal_count_graph(params)

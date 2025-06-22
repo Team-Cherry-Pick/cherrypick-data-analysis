@@ -16,6 +16,7 @@ def get_deal_post_trend(site_list: List[str], start_date: datetime, end_date: da
 
     # DataFrame으로 변환
     df = pd.DataFrame.from_records(result, columns=["created_at", "source_site", "deal_count", "views", "comment_count", "vote_count"])
+    df['color'] = df['source_site'].apply(lambda x: x.color)
     df['source_site'] = df['source_site'].apply(lambda x : x.name)
 
     # 'created_at' 컬럼을 datetime 형식으로 변환
@@ -26,6 +27,7 @@ def get_deal_post_trend(site_list: List[str], start_date: datetime, end_date: da
 
     return df
 
+# 유저 별 딜 지표
 @st.cache_data
 def get_user_deal_shape(site_list: List[str], start_date: datetime, end_date: datetime) -> pd.DataFrame:
     print(datetime.now())
@@ -37,14 +39,17 @@ def get_user_deal_shape(site_list: List[str], start_date: datetime, end_date: da
         "deal_count" : data[2],
         "views" : data[3],
         "vote" : data[4],
-        "comment_count" : data[5]
+        "comment_count" : data[5],
+        "color" : data[1].color
     } for data in deal_result])
-
     df = deal_df[deal_df['source_site'].isin(site_list)]
+
+
     return df
 
+# 딜-유저 누적 기여도 분석
 @st.cache_data
-def analyze_pareto_from_user_deals(
+def get_analyze_pareto_from_user_deals(
     site_list: List[str],
     start_date: datetime,
     end_date: datetime
@@ -71,7 +76,7 @@ def analyze_pareto_from_user_deals(
         "user_ratio", "cumulative_post_ratio"
     ]]
 
-
+# 유저 별 댓글 지표
 @st.cache_data
 def get_user_comment_shape(site_list: List[str], start_date: datetime, end_date: datetime):
 
@@ -83,7 +88,7 @@ def get_user_comment_shape(site_list: List[str], start_date: datetime, end_date:
         columns=["username", "source_site", "comment_count", "upvote", "downvote"]
     )
 
-    # enum -> 문자열로 변환
+    comment_df['color'] = comment_df['source_site'].apply(lambda x: x.color)
     comment_df["source_site"] = comment_df["source_site"].apply(lambda x: x.name)
     # site_list 필터링
     df = comment_df[comment_df["source_site"].isin(site_list)]
@@ -91,7 +96,7 @@ def get_user_comment_shape(site_list: List[str], start_date: datetime, end_date:
     return df
 
 @st.cache_data
-def analyze_pareto_from_user_comments(
+def get_analyze_pareto_from_user_comments(
     site_list: List[str],
     start_date: datetime,
     end_date: datetime
@@ -117,6 +122,28 @@ def analyze_pareto_from_user_comments(
         "username", "source_site", "comment_count",
         "user_ratio", "cumulative_post_ratio"
     ]]
+
+# 시간 별 딜 지표
+@st.cache_data
+def get_analyze_hour_deal(site_list: List[str], start_date: datetime, end_date: datetime) -> pd.DataFrame:
+    result = get_total_deal_count_group_by_hour(start_date, end_date)
+    df = pd.DataFrame.from_records(result, columns  =["hour", "source_site", "deal_count", "views", "comment_count", "vote"])
+    df['color'] = df['source_site'].apply(lambda x: x.color)
+    df['source_site'] = df['source_site'].apply(lambda x: x.name)
+    df = df[df['source_site'].isin(site_list)]
+
+    return df
+
+def get_category_deal_count(site_list: List[str], start_date: datetime, end_date: datetime) -> pd.DataFrame:
+    result = get_deal_count_by_category_and_site(start_date, end_date)
+    df = pd.DataFrame.from_records(result, columns =["category_name", "source_site", "deal_count", "views", "comment_count", "vote"])
+    df['color'] = df['source_site'].apply(lambda x: x.color)
+    df['source_site'] = df['source_site'].apply(lambda x: x.name)
+    df = df[df['source_site'].isin(site_list)]
+
+    return df
+
+
 
 # 카테고리 별 게시글 수
 def get_post_count_by_category() -> pd.DataFrame:
