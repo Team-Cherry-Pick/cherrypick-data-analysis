@@ -1,12 +1,11 @@
 from datetime import date, timedelta, datetime
-import streamlit as st
-from streamlit import empty
-
 from cherrypick_data_analysis.shared.util.redis_util import cache_init, get_cache
 from cherrypick_data_analysis.shared.enum.cachekey import CacheKey
 from cherrypick_data_analysis.shared.enum.site import Site
 from streamlit_option_menu import option_menu
 from cherrypick_data_analysis.shared.util.redis_util import get_memo_list, push_memo
+from cherrypick_data_analysis.data_analysis.util.auth_util import *
+from cherrypick_data_analysis.shared.util.redis_util import delete_memo
 
 # 'authorization'의 'auth' 딕셔너리 가져오기
 auth = st.secrets["authorization"]["auth"]
@@ -19,13 +18,7 @@ def main_title(title:str, caption:str) :
     with col2:
         if st.button("🔄 캐시 초기화"):
             cache_init()
-    with st.expander("### Guidelines") :
-        st.caption(f"""
-Dashboard  : 데이터 현황 확인 &nbsp;&nbsp;&nbsp;
-Statistics : 상세 통계 확인 &nbsp;&nbsp;&nbsp;
-Admin      : 관리자 전용 유틸리티 &nbsp;&nbsp;&nbsp;
-데이터는 뽐뿌 / 에펨코리아에서 크롤링해왔으며 추후 자사 데이터도 추가할 예정.
-""")
+
 
 def data_inventory_status_card(site:Site) :
     deal_count_dict = get_cache(CacheKey.SITE_DEAL_COUNT)
@@ -37,17 +30,16 @@ def data_inventory_status_card(site:Site) :
         st.metric("COMMENT", f"{comment_count_dict.get(site, 0):,} 건")
 
 def sidebar_login() :
-
     with st.sidebar :
         # 'key'가 없으면 None으로 초기화
         if "key" not in st.session_state:
             st.session_state["key"] = None
 
-        if st.session_state["key"] is None:
+        if get_key() is None:
             key = st.text_input("login", placeholder="Enter your key",  label_visibility="hidden")
             if st.button("login"):
-                if key:  # 로그인할 때 key 값이 비어있지 않으면
-                    if key not in auth.values() :
+                if key:
+                    if not is_admin_name(key) :
                         if key in list(auth):
                             key = auth[key]
                         st.session_state["key"] = key
@@ -56,7 +48,7 @@ def sidebar_login() :
                     else : st.toast("다른 key로 로그인해주세요 !")
                 else : st.toast("key를 입력해주세요 !")
         else:
-            st.write(f"hello ! {st.session_state['key']}, nice to meet you!")
+            st.write(f"hello ! {get_key()}, nice to meet you!")
 
 def sidebar_filter() :
     with st.sidebar:
@@ -97,6 +89,11 @@ def sidebar_page_selector() :
       )
     return selected
 
+# 인증된 유저만 보이는 메모
+def auth_memo_component(key : str, height:int) :
+    if get_key() : memo_component(key, height)
+
+# 메모 컴포넌트
 def memo_component(key : str, height:int) :
     con = st.container(height=height)
 
@@ -105,13 +102,22 @@ def memo_component(key : str, height:int) :
         messages = st.container(height= height-100)
         if not memo_list :
             messages.write("첫 메모를 남겨보세요 !")
+        idx = 0
         for memo in memo_list :
             with messages.chat_message("user") :
-                st.write(f"{memo['writer']} | {memo['created_at']}")
+                col1, col2 = st.columns([8, 2])
+                with col1 : st.write(f"{memo['writer']} | {memo['created_at']}")
+                with col2 :
+                    if is_admin_name(get_key()) :
+                        if st.button(f"delete", key=f"del{idx}") :
+                            delete_memo(key, idx)
+
                 st.write(f"{memo['content']}")
-        if st.session_state['key'] is not None :
+            idx += 1
+
+        if get_key() is not None :
             if prompt := st.chat_input("Say something"):
-                memo = {"writer" : st.session_state['key'], "content" : prompt, "created_at" : datetime.now().strftime("%Y.%m.%d %H:%M")}
+                memo = {"writer" : get_key(), "content" : prompt, "created_at" : datetime.now().strftime("%Y.%m.%d %H:%M")}
                 push_memo(key, memo)
                 with messages.chat_message("user"):
                     st.write(f"{memo['writer']} | {memo['created_at']}")
