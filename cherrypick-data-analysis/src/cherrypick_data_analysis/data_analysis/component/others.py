@@ -112,13 +112,13 @@ def memo_component(key : str, height:int) :
                         if st.button(f"delete", key=f"del{idx}") :
                             delete_memo(key, idx)
 
-                st.write(f"{memo['content']}")
+                st.html(f"{memo['content']}")
             idx += 1
 
         if get_key() is not None :
-            if prompt := st.chat_input("Say something"):
+            if prompt := st.chat_input("Say something", key=f"input{key}"):
                 memo = {"writer" : get_key(), "content" : prompt, "created_at" : datetime.now().strftime("%Y.%m.%d %H:%M")}
                 push_memo(key, memo)
                 with messages.chat_message("user"):
                     st.write(f"{memo['writer']} | {memo['created_at']}")
-                    st.write(f"{memo['content']}")
+                    st.html(f"{memo['content']}")

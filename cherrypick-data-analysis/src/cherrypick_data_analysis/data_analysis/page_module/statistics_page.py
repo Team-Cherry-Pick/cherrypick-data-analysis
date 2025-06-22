@@ -1,13 +1,17 @@
 from cherrypick_data_analysis.data_analysis.analysis.eda_analysis import *
 from cherrypick_data_analysis.data_analysis.component.graph import *
-
+from cherrypick_data_analysis.data_analysis.component.others import memo_component
 
 def statistics(params : dict) :
+    memo_flag = st.toggle("메모")
+    params["memo_flag"] = memo_flag
     tab1, tab2, tab3, tab4 = st.tabs(["활동량", "유저", "게시글", "댓글"])
     with tab1 :
         activity_metric(params)
     with tab2 :
         user_metric(params)
+    with tab3 :
+        deal_metric(params)
 
 def activity_metric(params : dict) :
 
@@ -35,6 +39,7 @@ def activity_metric(params : dict) :
     trend_of_views_graph(params)
 
 def user_metric(params : dict) :
+
     with st.expander("Explanation") :
         st.html(
             """
@@ -72,4 +77,4 @@ def user_metric(params : dict) :
             plot_pareto_comment_distribution(params)
 
 def deal_metric(params : dict) :
-    "asdf"
+    category_deal_count_graph(params)

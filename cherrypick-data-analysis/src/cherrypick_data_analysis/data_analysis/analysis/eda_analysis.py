@@ -134,6 +134,17 @@ def get_analyze_hour_deal(site_list: List[str], start_date: datetime, end_date: 
 
     return df
 
+def get_category_deal_count(site_list: List[str], start_date: datetime, end_date: datetime) -> pd.DataFrame:
+    result = get_deal_count_by_category_and_site(start_date, end_date)
+    df = pd.DataFrame.from_records(result, columns =["category_name", "source_site", "deal_count", "views", "comment_count", "vote"])
+    df['color'] = df['source_site'].apply(lambda x: x.color)
+    df['source_site'] = df['source_site'].apply(lambda x: x.name)
+    df = df[df['source_site'].isin(site_list)]
+
+    return df
+
+
+
 # 카테고리 별 게시글 수
 def get_post_count_by_category() -> pd.DataFrame:
     df = get_cache(CacheKey.DEAL_ALL)

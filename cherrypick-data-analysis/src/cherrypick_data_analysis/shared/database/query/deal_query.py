@@ -5,6 +5,9 @@ import pandas as pd
 from cherrypick_data_analysis.shared.enum.site import Site
 from sqlalchemy import func
 
+from cherrypick_data_analysis.shared.database.model import Category
+
+
 def get_all_deal_no(deal_no_set) :
     session = get_session()
     deal_no_list = session.query(Deal.deal_no).filter(Deal.deal_no.in_(deal_no_set)).all()
@@ -137,3 +140,22 @@ def get_total_deal_user(start_date, end_date) :
               .all())
     return result
 
+def get_deal_count_by_category_and_site(start_date, end_date):
+
+    session = get_session()
+
+    result = (
+        session.query(
+            Category.name.label("category_name"),
+            Deal.source_site,
+            func.count(Deal.deal_id).label("deal_count"),
+            func.sum(Deal.views).label('views'),
+            func.sum(Deal.comment_count).label('comment_count'),
+            func.sum(Deal.vote).label('vote')
+        )
+        .join(Category, Deal.category_id == Category.category_id)
+        .filter(Deal.created_at.between(start_date, end_date))
+        .group_by(Category.name, Deal.source_site)
+        .all()
+    )
+    return result

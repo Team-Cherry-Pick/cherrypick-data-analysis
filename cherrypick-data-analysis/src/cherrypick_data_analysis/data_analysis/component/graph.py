@@ -3,6 +3,10 @@ import streamlit as st
 from matplotlib import pyplot as plt
 from cherrypick_data_analysis.data_analysis.analysis.eda_analysis import *
 import plotly.graph_objects as go
+from cherrypick_data_analysis.data_analysis.component.others import memo_component
+
+column_rate = [8, 2]
+memo_height = 400
 
 def deal_status(params) :
     selected_sites = params["selected_sites"]
@@ -103,6 +107,7 @@ def trend_of_post_graph(params):
     selected_sites = params["selected_sites"]
     start_date = params["start_date"]
     end_date = params["end_date"]
+    memo_flag = params["memo_flag"]
 
     df = get_deal_post_trend(selected_sites, start_date, end_date)
     # 시계열 그래프 그리기
@@ -132,13 +137,19 @@ def trend_of_post_graph(params):
         showlegend=True
     )
 
-    # Streamlit에 Plotly 차트 출력
-    st.plotly_chart(fig)
+    if memo_flag :
+        col1, col2 = st.columns(2)
+        with col1: st.plotly_chart(fig)
+        with col2: memo_component("trend_of_post_graph", memo_height)
+    else :
+        st.plotly_chart(fig)
 
 def trend_of_views_graph(params):
     selected_sites = params["selected_sites"]
     start_date = params["start_date"]
     end_date = params["end_date"]
+    memo_flag = params["memo_flag"]
+
     df = get_deal_post_trend(selected_sites, start_date, end_date)
 
     # 시계열 그래프 그리기
@@ -168,14 +179,20 @@ def trend_of_views_graph(params):
         showlegend=True
     )
 
-    # Streamlit에 Plotly 차트 출력
-    st.plotly_chart(fig)
+    if memo_flag :
+        col1, col2 = st.columns(2)
+        with col1: st.plotly_chart(fig)
+        with col2: memo_component("trend_of_views_graph", memo_height)
+    else :
+        st.plotly_chart(fig)
 
 # 시간 별 딜 게시
 def deal_posts_by_hour(params) :
     selected_sites = params["selected_sites"]
     start_date = params["start_date"]
     end_date = params["end_date"]
+    memo_flag = params["memo_flag"]
+
     df = get_analyze_hour_deal(selected_sites, start_date, end_date)
     df.sort_values(by=['hour', 'source_site'], ascending=True, inplace=True)
     # Plotly 막대그래프
@@ -201,6 +218,50 @@ def deal_posts_by_hour(params) :
 
     # 그래프 출력
     fig.show()
-    st.plotly_chart(fig)
+    if memo_flag:
+        col1, col2 = st.columns(2)
+        with col1:
+            st.plotly_chart(fig)
+        with col2:
+            memo_component("deal_posts_by_hour", memo_height)
+    else:
+        st.plotly_chart(fig)
 
+def category_deal_count_graph(params):
+    selected_sites = params["selected_sites"]
+    start_date = params["start_date"]
+    end_date = params["end_date"]
+    memo_flag = params["memo_flag"]
 
+    df = get_category_deal_count(selected_sites, start_date, end_date)
+
+    fig = go.Figure()
+
+    for site in df['source_site'].unique():
+        site_df = df[df['source_site'] == site]
+        fig.add_trace(go.Bar(
+            x=site_df["category_name"],  # X축: 시간대
+            y=site_df["deal_count"],  # Y축: 게시물 수
+            name=site,  # 범례 이름
+            marker_color= site_df['color']  # 막대 색상 설정
+        ))
+
+    # 레이아웃 설정
+    fig.update_layout(
+        title="카테고리 별 딜 개수",  # 그래프 제목
+        xaxis_title="Names of Category",  # X축 제목
+        yaxis_title="Number of Deal Posts",  # Y축 제목
+        showlegend=True,
+        template="plotly_white"
+    )
+
+    # 그래프 출력
+    fig.show()
+    if memo_flag:
+        col1, col2 = st.columns(2)
+        with col1:
+            st.plotly_chart(fig)
+        with col2:
+            memo_component("category_deal_count_graph", memo_height)
+    else:
+        st.plotly_chart(fig)
