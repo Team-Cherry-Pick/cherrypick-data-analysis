@@ -2,9 +2,9 @@ from bs4 import BeautifulSoup
 from shared.process.page_dto import DealDTO
 import undetected_chromedriver as uc
 
-def get_driver():
+def get_driver(headed=False):
     options = uc.ChromeOptions()
-    options.add_argument('--headless')  # 필요하면 제거
+    if not headed : options.add_argument('--headless')  # 필요하면 제거
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--lang=ko-KR')

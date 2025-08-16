@@ -2,7 +2,7 @@ import sys
 import subprocess
 from cherrypick_data_analysis.shared.database.model import *
 from cherrypick_data_analysis.shared.database.database import Base, engine
-
+from fmkorea_crawler.crawl_latest_deals import crawl_latest_deals
 
 if __name__ == "__main__":
     Base.metadata.create_all(engine)
@@ -11,7 +11,7 @@ if __name__ == "__main__":
         mode = sys.argv[1]
         if "fmkorea" in mode:
             from fmkorea_crawler.fmkorea_total_crawl import crawl_start
-            crawl_start(int(sys.argv[2]))
+            crawl_latest_deals()
 
         if "ppomppu" in mode:
             from ppomppu_crawler.ppomppu_total_crawl import crawl_start
