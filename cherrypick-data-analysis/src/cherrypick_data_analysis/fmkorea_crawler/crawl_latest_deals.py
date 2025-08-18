@@ -1,4 +1,5 @@
 # 크롤링 하는 본체
+import threading
 from queue import Queue
 
 from selenium.webdriver.chrome.webdriver import WebDriver
@@ -10,8 +11,9 @@ from cherrypick_data_analysis.shared.enum.crawler_status import DataKey
 from time import sleep
 
 from fmkorea_crawler.crawler.modules import parse_fmkorea
+from shared.process.repik_upload_process import repik_upload_process
 
-task_queue = Queue()
+upload_queue = Queue()
 
 def crawl_latest_deals():
     print("FMKOREA 최신 글 크롤링 시작")
@@ -21,6 +23,7 @@ def crawl_latest_deals():
 
     driver = get_driver()
     slack.send_slack(f"Crawler가 {Site.FMKOREA.name}에 잠입했습니다 . . . !")
+    threading.Thread(target=repik_upload_process, args=(upload_queue, )).start()
 
     while True:
         # 중복 저장 방지
@@ -29,10 +32,11 @@ def crawl_latest_deals():
             deal_id, store_name = deal[0], deal[1]
             if store_name in "지마켓/쿠팡와우/롯데온/옥션/11번가" :
                 data = parse_fmkorea(driver, int(deal_id))
-                print(data)
+                sleep(5)
+                upload_queue.put(data)
 
-                sleep(600)
-        break
+        slack.send_slack(f"주요 스토어의 상품 {len(deals)}개를 찾았습니다 !")
+        sleep(600)
 
 
     print("cancel crawling . . .")
