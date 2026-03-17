@@ -1,2 +1,2 @@
-# cherrypick-ai
-체리픽에 사용될 해시태그 기반 상품 추천 시스테입니다.
+# cherrypick-datalab
+데이터분석용 리포지토리
